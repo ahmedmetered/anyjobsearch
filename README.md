@@ -31,6 +31,10 @@ Copy `skill/` into whichever folder your agent discovers skills from:
 | Cursor | `.agents/skills/anyjobsearch` in the workspace |
 | Anything else | any folder your agent reads `SKILL.md` files from |
 
+Alternatively, clone this repository directly into your skills folder: the
+root `SKILL.md` makes it discoverable in place, and both entrypoints register
+as the same skill.
+
 Then start a new session and ask for what you need:
 
 - "Build my candidate profile" (Phase 0, once)
