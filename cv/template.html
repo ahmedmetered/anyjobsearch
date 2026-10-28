@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<!--
+  anyjobsearch CV template - single page, ATS-parseable, print-ready.
+  How to use: copy this file, replace every placeholder, keep the section
+  order, then render with:  node print_pdf.mjs cv.html cv.pdf
+  Design rules live in skill/references/cv-builder.md.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{NAME}} - CV</title>
+<style>
+  @page { size: A4; margin: 14mm 16mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: #111; font-size: 10.5pt; line-height: 1.45; }
+  h1 { font-size: 20pt; font-weight: 700; letter-spacing: -0.01em; }
+  .contact { font-size: 9pt; color: #444; margin: 1.5mm 0 4mm; }
+  .summary { margin-bottom: 3mm; }
+  h2 { font-size: 11pt; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid #999; padding-bottom: 1mm; margin: 5mm 0 2.5mm; }
+  .entry { margin-bottom: 3mm; }
+  .head { display: flex; justify-content: space-between; gap: 4mm; }
+  .role { font-weight: 600; }
+  .when { color: #555; font-size: 9.5pt; white-space: nowrap; }
+  .where { color: #555; font-size: 9.5pt; font-style: italic; }
+  ul { margin: 1mm 0 0 5mm; }
+  li { margin-bottom: 0.8mm; }
+  .skills { margin-top: 1mm; }
+</style>
+</head>
+<body>
+
+<h1>{{NAME}}</h1>
+<p class="contact">{{CITY}} · {{EMAIL}} · {{LINKEDIN}} · {{GITHUB}} · {{PORTFOLIO}}</p>
+
+<p class="summary">{{SUMMARY: two or three sentences, plain claims, evidence-based.}}</p>
+
+<h2>Experience</h2>
+<div class="entry">
+  <div class="head"><span class="role">{{ROLE}}</span><span class="when">{{DATES}}</span></div>
+  <p class="where">{{EMPLOYER}}, {{CITY}}</p>
+  <ul><li>{{Achievement or scope, reframed honestly for the target role.}}</li></ul>
+</div>
+<!-- Repeat .entry per role, newest first. -->
+
+<h2>Selected work</h2>
+<div class="entry">
+  <div class="head"><span class="role">{{PROJECT}} ({{URL}})</span><span class="when">{{STATUS}}</span></div>
+  <ul><li>{{What it is and what it proves: stack, scale numbers, live status.}}</li></ul>
+</div>
+
+<h2>Skills</h2>
+<p class="skills">{{Primary skills · Secondary skills · Tooling}}</p>
+
+<h2>Education</h2>
+<div class="entry">
+  <div class="head"><span class="role">{{DEGREE}}</span><span class="when">{{DATES}}</span></div>
+  <p class="where">{{SCHOOL}}</p>
+  <ul><li>{{Thesis, grade, or honor - only if worth stating.}}</li></ul>
+</div>
+
+<h2>Certifications</h2>
+<p class="skills">{{Certification · Certification · Certification}}</p>
+
+<h2>Languages</h2>
+<p class="skills">{{Language level · Language level}}</p>
+
+</body>
+</html>

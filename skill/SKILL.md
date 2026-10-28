@@ -56,12 +56,14 @@ instead of silently dropping it. Postings that pass both gates are scored on
 five dimensions; the shortlist is the ranked output with one line of reasoning
 per posting.
 
-### Phase 3: Apply (`references/applications.md`)
+### Phase 3: Apply (`references/applications.md`, `references/cv-builder.md`)
 
 For each shortlisted posting the candidate approves: tailor the CV (mirror the
 posting's true requirements, lead with evidence, one page), draft a cover
 letter where one is expected, and produce a paste-ready application email or
-form answers. Record every application in the tracker.
+form answers. The bundled builder in `cv/` renders the tailored CV to PDF with
+a local browser engine, no LaTeX needed. Record every application in the
+tracker.
 
 ### Phase 4: Interview (`references/applications.md`, interview section)
 

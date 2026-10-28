@@ -12,6 +12,8 @@ the candidate can actually see and apply to, including Easy Apply flags,
 applicant counts, and repost status. Search each target title from the
 profile, scoped to each target market. One to two pages per title is enough
 for a daily scan; deduplicate postings across searches before ranking.
+A full worked setup for LinkedIn (server install, login flow, the exact
+search and detail calls, operational rules) is in `linkedin.md`.
 
 ## Route 2: Public boards and aggregation
 
