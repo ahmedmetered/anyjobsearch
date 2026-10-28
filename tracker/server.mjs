@@ -54,11 +54,11 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   const send = (code, payload, type = "application/json") => {
     res.writeHead(code, { "content-type": type + "; charset=utf-8" });
-    res.end(typeof payload === "string" ? payload : JSON.stringify(payload, null, 2));
+    res.end(typeof payload === "string" || Buffer.isBuffer(payload) ? payload : JSON.stringify(payload, null, 2));
   };
   try {
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html"))
-      return send(200, fs.readFileSync(path.join(here, "index.html")), "text/html");
+      return send(200, fs.readFileSync(path.join(here, "index.html"), "utf8"), "text/html");
 
     if (url.pathname === "/api/apps" && req.method === "GET") return send(200, readData());
 
