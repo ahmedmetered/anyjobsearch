@@ -48,6 +48,13 @@ portal API or MCP tool, public job boards, or plain web search. Search the
 candidate's target titles (use variants; let the profile's Titles section
 broaden). Deduplicate by posting, then hand the survivors to Phase 2.
 
+**Feed the tracker as you find.** Every posting that survives dedup goes
+into the tracker the moment it is found, not later: POST each to
+http://localhost:8788/api/apps (or the bulk endpoint `/api/apps/bulk`) with
+status "Found", the posting URL, and source. They then appear on the tracker
+page automatically. If the tracker is not running, start it with
+`node tracker/server.mjs` from the repository folder.
+
 ### Phase 2: Rank (`references/method.md`)
 
 Run the two hard gates first (eligibility, then language). A gate failure
