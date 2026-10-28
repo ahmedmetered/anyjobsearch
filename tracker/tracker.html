@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>anyjobsearch · Application Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: #0b0b0d; color: #f2f2f3; font-size: 14px; line-height: 1.5; padding: 24px 18px 60px; }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .mono { font-family: Consolas, "IBM Plex Mono", monospace; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { color: #9d9da8; font-size: 13px; margin: 4px 0 18px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .chip { border: 1px solid #27272b; background: #131316; border-radius: 999px; padding: 4px 12px; font-size: 12px; color: #a4a4ae; }
+  .chip b { color: #f2f2f3; }
+  .chip.hot b { color: #d6a955; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  button { background: #131316; color: #f2f2f3; border: 1px solid #27272b; border-radius: 7px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+  button:hover { border-color: #3d3d44; }
+  button.gold { background: #d6a955; border-color: #d6a955; color: #181205; font-weight: 600; }
+  button.danger { color: #f28b82; }
+  .card { background: #131316; border: 1px solid #27272b; border-radius: 11px; padding: 14px 16px; margin-bottom: 10px; }
+  .card:hover { border-color: #3d3d44; }
+  .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .co { font-weight: 700; font-size: 15px; }
+  .role { color: #d6a955; font-size: 13px; }
+  .meta { font-size: 12px; color: #7e7e88; margin-top: 2px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+  label { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #7e7e88; margin-bottom: 3px; }
+  select, input, textarea { width: 100%; background: #0b0b0d; border: 1px solid #27272b; color: #f2f2f3; border-radius: 6px; padding: 6px 8px; font-size: 13px; font-family: inherit; }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: #d6a955; }
+  textarea { min-height: 52px; resize: vertical; }
+  .foot { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .updated { font-size: 11px; color: #7e7e88; }
+  .empty { border: 1px dashed #27272b; border-radius: 11px; padding: 30px; text-align: center; color: #7e7e88; }
+  .hint { font-size: 11.5px; color: #7e7e88; margin-top: 14px; }
+  .new { border: 1px dashed #27272b; border-radius: 11px; padding: 14px 16px; margin-bottom: 10px; display: none; }
+  .new.open { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>anyjobsearch · Application Tracker</h1>
+  <p class="sub">One file, no server, no accounts. Everything is saved in this browser only - nothing is sent anywhere. Export a JSON backup regularly so the data is never only here.</p>
+  <div class="stats" id="stats"></div>
+  <div class="toolbar">
+    <button class="gold" onclick="openNew()">+ Add application</button>
+    <button onclick="loadExample()">Load example data</button>
+    <button onclick="exportJson()">Export backup (JSON)</button>
+    <label style="position:relative; overflow:hidden; display:inline-block;">
+      <span style="display:inline-block; background:#131316; border:1px solid #27272b; border-radius:7px; padding:7px 12px; font-size:12.5px; color:#f2f2f3; cursor:pointer;">Import backup</span>
+      <input type="file" accept=".json" style="position:absolute; inset:0; opacity:0; cursor:pointer;" onchange="importJson(this)">
+    </label>
+  </div>
+  <div id="list"></div>
+  <div class="new" id="newform">
+    <div class="grid">
+      <div><label>Company</label><input id="n_company" placeholder="Company"></div>
+      <div><label>Role</label><input id="n_role" placeholder="Role"></div>
+      <div><label>CV sent</label><input id="n_cv" placeholder="e.g. EN Developer PDF"></div>
+      <div><label>Applied date</label><input type="date" id="n_date"></div>
+    </div>
+    <div style="margin-top:8px"><label>Notes</label><textarea id="n_notes" placeholder="Source, contact, follow-up plan..."></textarea></div>
+    <div style="margin-top:8px; display:flex; gap:8px;">
+      <button class="gold" onclick="addApp()">Save application</button>
+      <button onclick="document.getElementById('newform').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+  <p class="hint">Statuses: Ready to send → Applied → Follow-up sent → Replied → Interviewing → Offer / Rejected / Withdrawn. After ten recorded outcomes, review the pattern: which scores, titles, and sources actually convert.</p>
+</div>
+<script>
+const STATUSES = ["Ready to send","Applied","Follow-up sent","Replied","Interviewing","Offer","Rejected","Withdrawn"];
+const KEY = "anyjobsearch-tracker.v1";
+const EXAMPLE = [
+  {company:"Kilowatt Systems", role:"Platform Support Engineer", cv:"EN Developer PDF", status:"Applied", date:"2027-03-01", notes:"Remote-EU. Found via company careers page. Cover letter flagged Kubernetes as current learning goal.", updated:"2027-03-01", next:"Follow-up on day 7", source:"Company careers page"},
+  {company:"Northwind Robotics", role:"Junior SRE", cv:"EN Developer PDF", status:"Interviewing", date:"2027-02-20", notes:"First call done. Prep doc from Phase 4.", updated:"2027-02-27", next:"Technical round", source:"Job board"},
+  {company:"Helios Analytics", role:"QA Analyst", cv:"IT Sviluppatore PDF", status:"Rejected", date:"2027-02-10", notes:"Rejected after screening; they wanted Robot Framework specifically.", updated:"2027-02-18", source:"LinkedIn"}
+];
+let data = load();
+function load(){
+  try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch(e){}
+  return [];
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(data)); render(); }
+function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function loadExample(){
+  if (data.length && !confirm("Replace current data with the fictional example?")) return;
+  data = JSON.parse(JSON.stringify(EXAMPLE));
+  save();
+}
+function render(){
+  const list = document.getElementById("list");
+  const counts = {}; STATUSES.forEach(s => counts[s] = 0);
+  data.forEach(a => counts[a.status] = (counts[a.status]||0)+1);
+  document.getElementById("stats").innerHTML =
+    `<span class="chip hot">Total: <b>${data.length}</b></span>` +
+    STATUSES.map(s => counts[s] ? `<span class="chip">${s}: <b>${counts[s]}</b></span>` : "").join("");
+  if (!data.length){ list.innerHTML = '<div class="empty">No applications yet. Add the first one above, or load the example data to see how it works.</div>'; return; }
+  const order = s => STATUSES.indexOf(s);
+  const sorted = data.map((a,i)=>({a,i})).sort((x,y)=> order(x.a.status)-order(y.a.status) || (y.a.updated||"").localeCompare(x.a.updated||""));
+  list.innerHTML = sorted.map(({a,i}) => `
+  <div class="card">
+    <div class="row1">
+      <div><span class="co">${esc(a.company)}</span> · <span class="role">${esc(a.role)}</span><div class="meta">${esc(a.source||"")} ${a.salary? "· "+esc(a.salary):""}</div></div>
+      <button class="danger" onclick="del(${i})">Delete</button>
+    </div>
+    <div class="grid">
+      <div><label>Outcome / status</label>
+        <select class="status-${a.status.toLowerCase().replace(/[^a-z]/g,"")}" onchange="setField(${i},'status',this.value)">
+          ${STATUSES.map(s=>`<option ${s===a.status?"selected":""}>${s}</option>`).join("")}
+        </select>
+      </div>
+      <div><label>CV sent</label><input value="${esc(a.cv||"")}" oninput="setField(${i},'cv',this.value,true)"></div>
+      <div><label>Applied date</label><input type="date" value="${esc(a.date||"")}" onchange="setField(${i},'date',this.value)"></div>
+      <div><label>Next action</label><input value="${esc(a.next||"")}" placeholder="e.g. follow-up on day 7" oninput="setField(${i},'next',this.value,true)"></div>
+    </div>
+    <div style="margin-top:8px"><label>Notes</label><textarea oninput="setField(${i},'notes',this.value,true)">${esc(a.notes||"")}</textarea></div>
+    <div class="foot"><span class="updated">last updated: ${esc(a.updated||"-")}</span></div>
+  </div>`).join("");
+}
+function setField(i, field, value, quiet){
+  data[i][field] = value;
+  data[i].updated = today();
+  if (!quiet) save(); else localStorage.setItem(KEY, JSON.stringify(data));
+}
+function del(i){
+  if (!confirm("Delete " + (data[i].company||"this application") + "?")) return;
+  data.splice(i,1); save();
+}
+function openNew(){ document.getElementById("newform").classList.add("open"); document.getElementById("n_company").focus(); }
+function addApp(){
+  const c = document.getElementById("n_company").value.trim();
+  if (!c){ alert("Company is required"); return; }
+  data.push({company:c, role:document.getElementById("n_role").value.trim(), cv:document.getElementById("n_cv").value, status:"Ready to send", date:document.getElementById("n_date").value, notes:document.getElementById("n_notes").value.trim(), updated:today()});
+  ["n_company","n_role","n_cv","n_notes","n_date"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("newform").classList.remove("open");
+  save();
+}
+function exportJson(){
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "job-tracker-backup-" + today() + ".json";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importJson(input){
+  const f = input.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { try { data = JSON.parse(r.result); save(); } catch(e){ alert("Invalid JSON file"); } };
+  r.readAsText(f);
+}
+render();
+</script>
+</body>
+</html>

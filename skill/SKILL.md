@@ -74,6 +74,10 @@ question at a time, feedback after each answer.
 
 ### Phase 5: Outcome (`references/applications.md`, tracker section)
 
+The pack bundles a zero-setup tracker page at `tracker/tracker.html`: open it
+in a browser, add applications, edit status and notes inline. Data stays in
+that browser's local storage - export the JSON backup regularly.
+
 Record results (rejected, interviewing, offer, withdrawn) in the tracker.
 After ten or more recorded outcomes, run a pattern review: which score ranges,
 titles, or portals actually convert, and adjust targeting.

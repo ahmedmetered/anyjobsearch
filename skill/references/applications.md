@@ -47,7 +47,10 @@ a time, honest feedback after each answer, retry until the answer lands.
 
 ## Tracker
 
-Keep `tracker.md` in the data folder, one row per application:
+Keep a tracker in the data folder - either a `tracker.md` table (below) or
+the bundled `tracker/tracker.html` page, which stores the same fields in your
+browser's local storage with editable status, CV variant, and notes per
+application, plus JSON export/import for backup. One row per application:
 
 ```
 | Date | Company | Role | Source | CV variant | Status | Next action | Due |
