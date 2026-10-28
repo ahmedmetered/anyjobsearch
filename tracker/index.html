@@ -95,8 +95,13 @@ function render(){
   apps.forEach(a => counts[a.status] = (counts[a.status]||0)+1);
   const CV_OPTIONS = [...new Set(apps.map(a => a.cv).filter(Boolean))];
   const order = ["Found","Ready to send","Applied","Follow-up sent","Replied","Interviewing","Offer","Rejected","Withdrawn"];
-  $("stats").innerHTML = `<span class="chip hot">Total: <b>${apps.length}</b></span>` +
-    order.map(s => counts[s] ? `<span class="chip">${s}: <b>${counts[s]}</b></span>` : "").join("");
+  const nLeads = counts["Found"] || 0;
+  const nApps = apps.length - nLeads;
+  $("stats").innerHTML =
+    `<span class="chip hot">Applications: <b>${nApps}</b></span>` +
+    `<span class="chip">Leads (Found): <b>${nLeads}</b></span>` +
+    `<span class="chip">All entries: <b>${apps.length}</b></span>` +
+    order.filter(s => s !== "Found").map(s => counts[s] ? `<span class="chip">${s}: <b>${counts[s]}</b></span>` : "").join("");
   const ncv = $("n_cv");
   if (ncv) ncv.innerHTML = '<option value=""></option>' + CV_OPTIONS.map(s=>`<option>${esc(s)}</option>`).join("");
   if (!shown.length){ $("list").innerHTML = '<div class="empty">Nothing here yet. Add an application or import found jobs.</div>'; return; }
