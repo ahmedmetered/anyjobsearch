@@ -86,6 +86,15 @@ examples/
   example-evaluation.md     a fictional posting evaluation
 ```
 
+## The tracker
+
+The pack bundles a zero-setup application tracker: `node tracker/server.mjs`,
+then open http://localhost:8788. Applications live in a JSON file on your
+disk (`tracker-data.json`), the agent that hunts can push found postings
+straight into the pipeline via the import API, and you edit statuses, CV
+variants, and notes on the page. One-click JSON export for backups. See
+[tracker/README.md](tracker/README.md).
+
 ## Credits and license
 
 MIT. Method adapted from
