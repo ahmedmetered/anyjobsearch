@@ -48,9 +48,11 @@ a time, honest feedback after each answer, retry until the answer lands.
 ## Tracker
 
 Keep a tracker in the data folder - either a `tracker.md` table (below) or
-the bundled `tracker/tracker.html` page, which stores the same fields in your
-browser's local storage with editable status, CV variant, and notes per
-application, plus JSON export/import for backup. One row per application:
+the bundled localhost tracker: `node tracker/server.mjs`, then open
+http://localhost:8788. It stores the same fields in a JSON file on disk
+(`tracker-data.json`), supports editable status, CV variant, and notes per
+application, JSON export, and an import endpoint the agent can push found
+postings into. One row per application:
 
 ```
 | Date | Company | Role | Source | CV variant | Status | Next action | Due |

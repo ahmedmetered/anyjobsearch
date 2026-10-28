@@ -74,9 +74,10 @@ question at a time, feedback after each answer.
 
 ### Phase 5: Outcome (`references/applications.md`, tracker section)
 
-The pack bundles a zero-setup tracker page at `tracker/tracker.html`: open it
-in a browser, add applications, edit status and notes inline. Data stays in
-that browser's local storage - export the JSON backup regularly.
+The pack bundles a localhost tracker: `node tracker/server.mjs`, then open
+http://localhost:8788. Push found postings in via the import API, edit
+outcomes on the page. Data lives in `tracker-data.json` on disk - back it up
+like any file.
 
 Record results (rejected, interviewing, offer, withdrawn) in the tracker.
 After ten or more recorded outcomes, run a pattern review: which score ranges,

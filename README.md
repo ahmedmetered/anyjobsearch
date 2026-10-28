@@ -6,7 +6,7 @@ anyjobsearch is an agent-native skill pack: copy it into your agent's skills
 folder and it carries a job search from empty profile to tracked outcome.
 Profile building, portal scanning (including a documented logged-in LinkedIn
 route), hard eligibility and language gates, five-dimension posting ranking,
-an application tracker (a standalone page bundled in `tracker/`) - and a built-in CV builder that renders tailored,
+an application tracker that runs on localhost with a JSON-file database, fed directly by the agent's hunts - and a built-in CV builder that renders tailored,
 ATS-parseable one-page CVs to PDF with the browser already on your machine.
 No build step, no LaTeX, no subscription beyond the agent itself, no market
 lock-in. Where ai-job-search compiles CVs with LaTeX, this pack prints them
@@ -78,8 +78,9 @@ cv/
   print_pdf.mjs             HTML to PDF via Edge/Chrome, no LaTeX
   audit_layout.py           numeric layout audit against a reference PDF
 tracker/
-  tracker.html              standalone application tracker (open in a browser;
-                            data stays in your browser's local storage)
+  server.mjs                zero-dependency localhost server (port 8788)
+  index.html                the tracker page it serves
+  README.md                 run instructions + API
 examples/
   example-profile.md        a fictional candidate, filled in
   example-evaluation.md     a fictional posting evaluation
