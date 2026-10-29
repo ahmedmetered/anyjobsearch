@@ -37,6 +37,8 @@ const normalize = a => ({
   url: a.url || "",
   salary: a.salary || "",
   cv: a.cv || "",
+  mode: a.mode || "",
+  type: a.type || "",
   status: STATUSES.includes(a.status) ? a.status : "Found",
   date: a.date || "",
   next: a.next || "",

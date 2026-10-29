@@ -68,6 +68,18 @@
       <div><label>Company</label><input id="n_company" placeholder="Company"></div>
       <div><label>Role</label><input id="n_role" placeholder="Role"></div>
       <div><label>CV sent</label><select id="n_cv"></select></div>
+      <div><label>Work mode</label>
+        <select id="n_mode">
+          <option value=""></option>
+          <option>Remote</option><option>Hybrid</option><option>On-site</option>
+        </select>
+      </div>
+      <div><label>Type</label>
+        <select id="n_type">
+          <option value=""></option>
+          <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Freelance</option>
+        </select>
+      </div>
       <div><label>Applied date</label><input type="date" id="n_date"></div>
     </div>
     <div style="margin-top:8px"><label>Notes</label><textarea id="n_notes"></textarea></div>
@@ -130,6 +142,24 @@ function render(){
         </div>
       </div>
       <div><label>Applied date</label><input type="date" value="${esc(a.date||"")}" onchange="patch('${a.id}', {date: this.value})"></div>
+      <div><label>Work mode</label>
+        <select onchange="patch('${a.id}', {mode: this.value})">
+          <option value=""></option>
+          <option ${a.mode==="Remote"?"selected":""}>Remote</option>
+          <option ${a.mode==="Hybrid"?"selected":""}>Hybrid</option>
+          <option ${a.mode==="On-site"?"selected":""}>On-site</option>
+        </select>
+      </div>
+      <div><label>Type</label>
+        <select onchange="patch('${a.id}', {type: this.value})">
+          <option value=""></option>
+          <option ${a.type==="Full-time"?"selected":""}>Full-time</option>
+          <option ${a.type==="Part-time"?"selected":""}>Part-time</option>
+          <option ${a.type==="Contract"?"selected":""}>Contract</option>
+          <option ${a.type==="Internship"?"selected":""}>Internship</option>
+          <option ${a.type==="Freelance"?"selected":""}>Freelance</option>
+        </select>
+      </div>
       <div><label>Next action</label><input value="${esc(a.next||"")}" placeholder="e.g. follow-up day 7" onchange="patch('${a.id}', {next: this.value})"></div>
     </div>
     <div class="full"><label>Notes</label><textarea onchange="patch('${a.id}', {notes: this.value})">${esc(a.notes||"")}</textarea></div>
@@ -150,9 +180,9 @@ async function addApp(){
   const company = $("n_company").value.trim();
   if (!company){ alert("Company is required"); return; }
   await fetch(API, {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({
-    company, role: $("n_role").value.trim(), cv: $("n_cv").value.trim(), date: $("n_date").value, status: "Applied", notes: $("n_notes").value.trim()
+    company, role: $("n_role").value.trim(), cv: $("n_cv").value.trim(), mode: $("n_mode").value, type: $("n_type").value, date: $("n_date").value, status: "Applied", notes: $("n_notes").value.trim()
   })});
-  ["n_company","n_role","n_cv","n_notes","n_date"].forEach(id => $(id).value = "");
+  ["n_company","n_role","n_cv","n_notes","n_date","n_mode","n_type"].forEach(id => $(id).value = "");
   $("newform").classList.remove("open");
   refresh();
 }
