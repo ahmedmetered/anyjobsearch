@@ -294,7 +294,7 @@ function render(){
     seg("", "All", apps.length) +
     STAGES.map(s => seg(s, s, counts[s] || 0)).join("");
   function seg(val, label, n){
-    return `<button class="seg${n===0?" none":""}" aria-pressed="${statusSel===val}" onclick="setStatus(${JSON.stringify(val)})"><b>${n}</b> ${esc(label)}</button>`;
+    return `<button class="seg${n===0?" none":""}" aria-pressed="${statusSel===val}" onclick="setStatus('${esc(val)}')"><b>${n}</b> ${esc(label)}</button>`;
   }
 
   // dynamic filter options
