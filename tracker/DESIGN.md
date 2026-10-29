@@ -11,9 +11,16 @@ Scanability and truthful totals outrank expression. Expression lives in one
 place: the pipeline bar (see Signature).
 
 ## Appearance
-**Light only, deliberately.** The use scene is short daytime desk sessions;
-the incumbent dark world (near-black + gold) was the replaced anti-reference.
-No app-level appearance toggle.
+**Light default + designed dark, user-toggleable** (Amended 2026-10-30 by
+operator decision; the original light-only call is superseded). Light
+serves the daytime desk scene; dark uses Apple dark values — ground
+`#0A0A0C`, surface `#17171A`, ink `#F5F5F7`, muted `#A1A1A6`, accent
+`#0A84FF` — softened surfaces, never an inversion. Toggle: sun/moon button
+in the masthead, persisted in localStorage under `am-theme`, first paint
+set by an inline head script from `prefers-color-scheme` (no flash).
+Inverted-surface elements (hot chip, active pipeline segment) read
+background=`--ink` / text=`--surface` so they invert correctly in both
+appearances.
 
 ## Tokens
 
