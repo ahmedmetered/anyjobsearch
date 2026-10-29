@@ -117,9 +117,25 @@ The hunting routes that feed the tracker live in
 
 | Route | Access | What it gives you |
 |---|---|---|
+| [Company-first ATS](sweeps/README.md#0-company-first-public-ats-apis---no-login-no-board) | **none** — public JSON from Greenhouse, Ashby, Lever, SmartRecruiters, Workable, Recruitee | the sharpest tool: pull any target company's live openings **before they reach job boards** |
 | [LinkedIn](sweeps/README.md#1-linkedin-logged-in-via-mcp) | logged-in MCP browser | the core board; light daily calls survive, volume does not |
 | [Indeed](sweeps/README.md#2-indeed-logged-in-headful-browser) | logged-in headful window | **salaries on every card**, different inventory from LinkedIn |
 | [radarak](sweeps/README.md#3-radarak-career-page-aggregator-no-login) | none | career-page aggregator; expires fast, apply within days |
+
+The ATS route in one command:
+
+```
+cd sweeps
+node ats.js --company celonis=greenhouse --company mollie=ashby \
+            --company canonical=greenhouse --company elevenlabs=ashby \
+            --loc "milan,italy,remote" --kw "intern,data,qa,automation,ai"
+```
+
+Find a company's ATS by reading the careers-page widget domain
+(`boards.greenhouse.io`, `jobs.ashbyhq.com`, `api.lever.co`,
+`jobs.smartrecruiters.com`, `apply.workable.com`, `.recruitee.com`),
+then pull openings straight from the source. This is how you apply days
+before a posting is ever promoted.
 
 Hard-won gotchas are in the runbook: Indeed blocks headless browsers (run
 the sweep in a visible window), radarak cuts job URLs short (verify via the
