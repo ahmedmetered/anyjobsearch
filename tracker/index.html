@@ -56,6 +56,17 @@
       <option>Found</option><option>Ready to send</option><option>Applied</option><option>Follow-up sent</option>
       <option>Replied</option><option>Interviewing</option><option>Offer</option><option>Rejected</option><option>Withdrawn</option>
     </select>
+    <select class="filter" id="f_mode" onchange="render()">
+      <option value="">All modes</option>
+      <option>Remote</option><option>Hybrid</option><option>On-site</option>
+    </select>
+    <select class="filter" id="f_type" onchange="render()">
+      <option value="">All types</option>
+      <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Freelance</option>
+    </select>
+    <select class="filter" id="f_loc" onchange="render()">
+      <option value="">All locations</option>
+    </select>
     <span class="spacer"></span>
     <button class="gold" onclick="openNew()">+ Add application</button>
     <button onclick="toggleImport()">Import found jobs (JSON)</button>
@@ -80,6 +91,7 @@
           <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Freelance</option>
         </select>
       </div>
+      <div><label>Location</label><input id="n_loc" placeholder="e.g. Milan"></div>
       <div><label>Applied date</label><input type="date" id="n_date"></div>
     </div>
     <div style="margin-top:8px"><label>Notes</label><textarea id="n_notes"></textarea></div>
@@ -102,7 +114,8 @@ async function refresh(){
 }
 function render(){
   const filter = $("filter").value;
-  const shown = apps.filter(a => !filter || a.status === filter);
+  const fm = $("f_mode").value, ft = $("f_type").value, fl = $("f_loc").value;
+  const shown = apps.filter(a => (!filter || a.status === filter) && (!fm || a.mode === fm) && (!ft || a.type === ft) && (!fl || (a.location||"") === fl));
   const counts = {};
   apps.forEach(a => counts[a.status] = (counts[a.status]||0)+1);
   const CV_OPTIONS = [...new Set(apps.map(a => a.cv).filter(Boolean))];
@@ -114,6 +127,12 @@ function render(){
     `<span class="chip">Leads (Found): <b>${nLeads}</b></span>` +
     `<span class="chip">All entries: <b>${apps.length}</b></span>` +
     order.filter(s => s !== "Found").map(s => counts[s] ? `<span class="chip">${s}: <b>${counts[s]}</b></span>` : "").join("");
+  const floc = $("f_loc");
+  if (floc){
+    const cur = floc.value;
+    const locs = [...new Set(apps.map(a => a.location).filter(Boolean))].sort();
+    floc.innerHTML = '<option value="">All locations</option>' + locs.map(l => `<option ${l===cur?"selected":""}>${esc(l)}</option>`).join("");
+  }
   const ncv = $("n_cv");
   if (ncv) ncv.innerHTML = '<option value=""></option>' + CV_OPTIONS.map(s=>`<option>${esc(s)}</option>`).join("");
   if (!shown.length){ $("list").innerHTML = '<div class="empty">Nothing here yet. Add an application or import found jobs.</div>'; return; }
@@ -160,6 +179,7 @@ function render(){
           <option ${a.type==="Freelance"?"selected":""}>Freelance</option>
         </select>
       </div>
+      <div><label>Location</label><input value="${esc(a.location||"")}" placeholder="e.g. Milan" onchange="patch('${a.id}', {location: this.value})"></div>
       <div><label>Next action</label><input value="${esc(a.next||"")}" placeholder="e.g. follow-up day 7" onchange="patch('${a.id}', {next: this.value})"></div>
     </div>
     <div class="full"><label>Notes</label><textarea onchange="patch('${a.id}', {notes: this.value})">${esc(a.notes||"")}</textarea></div>
@@ -180,9 +200,9 @@ async function addApp(){
   const company = $("n_company").value.trim();
   if (!company){ alert("Company is required"); return; }
   await fetch(API, {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({
-    company, role: $("n_role").value.trim(), cv: $("n_cv").value.trim(), mode: $("n_mode").value, type: $("n_type").value, date: $("n_date").value, status: "Applied", notes: $("n_notes").value.trim()
+    company, role: $("n_role").value.trim(), cv: $("n_cv").value.trim(), mode: $("n_mode").value, type: $("n_type").value, location: $("n_loc").value.trim(), date: $("n_date").value, status: "Applied", notes: $("n_notes").value.trim()
   })});
-  ["n_company","n_role","n_cv","n_notes","n_date","n_mode","n_type"].forEach(id => $(id).value = "");
+  ["n_company","n_role","n_cv","n_notes","n_date","n_mode","n_type","n_loc"].forEach(id => $(id).value = "");
   $("newform").classList.remove("open");
   refresh();
 }

@@ -39,6 +39,7 @@ const normalize = a => ({
   cv: a.cv || "",
   mode: a.mode || "",
   type: a.type || "",
+  location: a.location || "",
   status: STATUSES.includes(a.status) ? a.status : "Found",
   date: a.date || "",
   next: a.next || "",
