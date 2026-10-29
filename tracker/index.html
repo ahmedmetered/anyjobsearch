@@ -41,7 +41,7 @@
     -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   }
   ::selection { background:var(--accent-soft); }
-  ::caret { caret-color:var(--accent); }
+  input, textarea { caret-color:var(--accent); }
   *:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
   ::-webkit-scrollbar { width:11px; height:11px; }
   ::-webkit-scrollbar-thumb { background:var(--hairline-strong); border-radius:6px; border:3px solid var(--bg); }
@@ -238,8 +238,9 @@
           <option>IT Sviluppatore PDF</option>
           <option>Data Analyst EN PDF</option>
           <option>Data Analyst IT PDF</option>
-          <option>Other…</option>
+          <option value="__other">Other…</option>
         </select>
+        <input class="ctl" id="n_cv_other" placeholder="Custom CV label" style="display:none;margin-top:4px;width:100%">
       </div>
       <div><label for="n_mode">Work mode</label>
         <select class="ctl" id="n_mode">
@@ -271,10 +272,11 @@ const API = "/api/apps";
 const STAGES = ["Found","Ready to send","Applied","Follow-up sent","Replied","Interviewing","Offer","Rejected","Withdrawn"];
 let apps = [];
 let statusSel = "";   // "" = all stages
+let scrollYBefore = 0;   // preserved across the full-list re-render
 let topOnly = false;
 let easyOnly = false;
 const $ = id => document.getElementById(id);
-const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
 const byAhmed = a => !a.source || /ahmed|added manually/i.test(a.source);
 const srcCat = a => { const s = (a.source||"").toLowerCase();
@@ -335,7 +337,7 @@ function render(){
   }
   const sorted = shown.slice().sort((x,y) =>
     STAGES.indexOf(x.status)-STAGES.indexOf(y.status) || (y.updated||"").localeCompare(x.updated||""));
-  $("list").innerHTML = sorted.map((a,idx) => {
+  const listHtml = sorted.map((a,idx) => {
     const tags = [a.mode, a.type, a.location].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join("");
     const cvOpts = ["EN Developer PDF","IT Sviluppatore PDF","Data Analyst EN PDF","Data Analyst IT PDF"];
     const cvCustom = a.cv && !cvOpts.includes(a.cv);
@@ -387,6 +389,8 @@ function render(){
     <div class="foot"><span class="updated">updated ${esc(a.updated||"—")}</span></div>
   </article>`;
   }).join("");
+  $("list").innerHTML = listHtml;
+  if (scrollYBefore) requestAnimationFrame(() => window.scrollTo(0, scrollYBefore));
 }
 
 function setStatus(v){ statusSel = v; render(); }
@@ -414,11 +418,12 @@ function toggleEasy(){
   render();
 }
 function openNew(){ $("newform").classList.add("open"); $("n_company").focus(); }
+$("n_cv").addEventListener("change", function(){ $("n_cv_other").style.display = this.value === "__other" ? "" : "none"; });
 async function addApp(){
   const company = $("n_company").value.trim();
   if (!company){ alert("Company is required"); return; }
   await fetch(API, {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({
-    company, role: $("n_role").value.trim(), cv: $("n_cv").value.trim(), mode: $("n_mode").value, type: $("n_type").value,
+    company, role: $("n_role").value.trim(), cv: $("n_cv").value === "__other" ? $("n_cv_other").value.trim() : $("n_cv").value, mode: $("n_mode").value, type: $("n_type").value,
     location: $("n_loc").value.trim(), date: $("n_date").value, status: "Applied", notes: $("n_notes").value.trim()
   })});
   ["n_company","n_role","n_cv","n_mode","n_type","n_loc","n_notes","n_date"].forEach(id => $(id).value = "");
