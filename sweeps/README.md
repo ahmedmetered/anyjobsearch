@@ -1,10 +1,29 @@
 # Daily sweeps
 
-Three hunting routes, one destination: everything new goes into the tracker
+Hunting routes, one destination: everything new goes into the tracker
 (`node tracker/server.mjs`, then `POST /api/apps/bulk` with
 `{"apps":[{...}]}` - it dedupes on company+role). The tracker fields the
 sweeps should fill: `company, role, source, url, salary, mode, type,
 location, cv, top, easy, notes`.
+
+## 0. Company-first (public ATS APIs - no login, no board)
+
+The strongest route once you know *which companies* you want: Greenhouse,
+Ashby, Lever, SmartRecruiters, Workable and Recruitee all expose a company's
+live openings as free JSON.
+
+```
+cd sweeps
+node ats.js --company celonis=greenhouse --company mollie=ashby \
+            --loc "milan,italy" --kw "intern,analyst,data,qa,automation"
+```
+
+Find a company's ATS by opening its careers page and reading the
+job-widget domain (`boards.greenhouse.io`, `jobs.ashbyhq.com`,
+`api.lever.co`, `jobs.smartrecruiters.com`, `apply.workable.com`,
+`.recruitee.com`). Build a targets file of 20-30 companies and sweep them
+all in one command - this is how you apply before a posting ever reaches a
+job board.
 
 ## 1. LinkedIn (logged-in, via MCP)
 
@@ -66,3 +85,15 @@ filtered.
 Wire these into a daily automation (07:00-09:00 works): start the tracker,
 run the sweeps, POST new findings, and leave a digest. Keep it light - one
 pass per source per day is the right rhythm for logged-in boards.
+
+## Audited and rejected
+
+- **Jobgether** - aggregator with a subscription wall; static pages carry
+  titles only, company/apply data needs per-offer fetches or a paid plan.
+  Inventory overlaps the ATS route anyway. Browse manually if you like it.
+- **Arbeitnow** - Germany-centric board; API lives at
+  `www.arbeitnow.com/api/job-board-api` (not `/api`). Useful for German
+  relocation hunting, nothing for Italy.
+- **eurotoptech / remotegoats** - senior + $100k+ segments, paywalled
+  listings. Relevant much later in a career, not at entry.
+- **Glassdoor / Wellfound** - login-walled to automation; browse manually.
