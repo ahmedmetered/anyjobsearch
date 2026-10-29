@@ -69,6 +69,11 @@
     </select>
     <button id="f_top" onclick="toggleTop()">☆ Top picks</button>
     <button id="f_easy" onclick="toggleEasy()">Easy Apply</button>
+    <select class="filter" id="f_by" onchange="render()">
+      <option value="">Found by: everyone</option>
+      <option value="ahmed">Found by: Ahmed</option>
+      <option value="zcode">Found by: ZCode</option>
+    </select>
     <span class="spacer"></span>
     <button class="gold" onclick="openNew()">+ Add application</button>
     <button onclick="toggleImport()">Import found jobs (JSON)</button>
@@ -130,8 +135,9 @@ function toggleEasy(){
 }
 function render(){
   const filter = $("filter").value;
-  const fm = $("f_mode").value, ft = $("f_type").value, fl = $("f_loc").value;
-  const shown = apps.filter(a => (!filter || a.status === filter) && (!fm || a.mode === fm) && (!ft || a.type === ft) && (!fl || (a.location||"") === fl) && (!topOnly || a.top) && (!easyOnly || a.easy));
+  const fm = $("f_mode").value, ft = $("f_type").value, fl = $("f_loc").value, fb = $("f_by").value;
+  const byAhmed = a => !a.source || /ahmed|added manually/i.test(a.source);
+  const shown = apps.filter(a => (!filter || a.status === filter) && (!fm || a.mode === fm) && (!ft || a.type === ft) && (!fl || (a.location||"") === fl) && (!topOnly || a.top) && (!easyOnly || a.easy) && (!fb || (fb === "ahmed" ? byAhmed(a) : !byAhmed(a))));
   const counts = {};
   apps.forEach(a => counts[a.status] = (counts[a.status]||0)+1);
   const CV_OPTIONS = [...new Set(apps.map(a => a.cv).filter(Boolean))];
