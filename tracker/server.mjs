@@ -40,6 +40,8 @@ const normalize = a => ({
   mode: a.mode || "",
   type: a.type || "",
   location: a.location || "",
+  top: !!a.top,
+  easy: !!a.easy,
   status: STATUSES.includes(a.status) ? a.status : "Found",
   date: a.date || "",
   next: a.next || "",
