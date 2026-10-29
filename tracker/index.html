@@ -68,6 +68,7 @@
       <option value="">All locations</option>
     </select>
     <button id="f_top" onclick="toggleTop()">☆ Top picks</button>
+    <button id="f_easy" onclick="toggleEasy()">Easy Apply</button>
     <span class="spacer"></span>
     <button class="gold" onclick="openNew()">+ Add application</button>
     <button onclick="toggleImport()">Import found jobs (JSON)</button>
@@ -107,6 +108,7 @@
 const API = "/api/apps";
 let apps = [];
 let topOnly = false;
+let easyOnly = false;
 const $ = id => document.getElementById(id);
 const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
@@ -121,10 +123,15 @@ function toggleTop(){
   b.classList.toggle("gold", topOnly);
   render();
 }
+function toggleEasy(){
+  easyOnly = !easyOnly;
+  $("f_easy").classList.toggle("gold", easyOnly);
+  render();
+}
 function render(){
   const filter = $("filter").value;
   const fm = $("f_mode").value, ft = $("f_type").value, fl = $("f_loc").value;
-  const shown = apps.filter(a => (!filter || a.status === filter) && (!fm || a.mode === fm) && (!ft || a.type === ft) && (!fl || (a.location||"") === fl) && (!topOnly || a.top));
+  const shown = apps.filter(a => (!filter || a.status === filter) && (!fm || a.mode === fm) && (!ft || a.type === ft) && (!fl || (a.location||"") === fl) && (!topOnly || a.top) && (!easyOnly || a.easy));
   const counts = {};
   apps.forEach(a => counts[a.status] = (counts[a.status]||0)+1);
   const CV_OPTIONS = [...new Set(apps.map(a => a.cv).filter(Boolean))];
@@ -153,7 +160,7 @@ function render(){
     <div class="row1">
       <div><span class="co">${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.company)}</a>` : esc(a.company)}</span> · <span class="role">${esc(a.role)}</span><div class="meta">${esc(a.source||"")} ${a.salary? "· "+esc(a.salary):""}</div></div>
       <button class="${a.top?"gold":""}" title="Top pick" onclick="patch('${a.id}', {top: ${!a.top}})">★</button>
-      <button class="${a.easy?"gold":""}" title="Easy Apply" onclick="patch('${a.id}', {easy: ${!a.easy}})">EA</button>
+      <button class="${a.easy?"gold":""}" title="Easy Apply" onclick="patch('${a.id}', {easy: ${!a.easy}})">Easy Apply</button>
       <button class="danger" onclick="del('${a.id}')">Delete</button>
     </div>
     <div class="grid">
