@@ -81,6 +81,12 @@ tracker/
   server.mjs                zero-dependency localhost server (port 8788)
   index.html                the tracker page it serves
   README.md                 run instructions + API
+sweeps/
+  README.md                 the daily sweep runbook (LinkedIn, Indeed, radarak)
+  indeed/login.mjs          one-time Indeed sign-in (verified, headful)
+  indeed/sweep.mjs          Indeed search -> JSON, salaries included
+  indeed/package.json       patchright dependency
+  radarak/radarak-italy.js  career-page aggregator filter for Italy
 examples/
   example-profile.md        a fictional candidate, filled in
   example-evaluation.md     a fictional posting evaluation
@@ -94,6 +100,33 @@ disk (`tracker-data.json`), the agent that hunts can push found postings
 straight into the pipeline via the import API, and you edit statuses, CV
 variants, and notes on the page. One-click JSON export for backups. See
 [tracker/README.md](tracker/README.md).
+
+Every card carries: status pipeline (Found → Ready to send → Applied → …),
+which CV variant went out, **work mode** (remote / hybrid / on-site),
+**type** (full-time / part-time / contract / internship / freelance),
+**location**, a **★ top pick** star, and an **Easy Apply** marker. The
+toolbar filters on all of it - status, mode, type, location, source
+(LinkedIn, Indeed, radarak, HN, boards...), and who found the job (you or
+the agent) - so "remote + internship + Milan" or "starred + Easy Apply" is
+three clicks. Stats chips on top separate real applications from raw leads.
+
+## Daily sweeps
+
+The hunting routes that feed the tracker live in
+[sweeps/](sweeps/README.md) with a full runbook:
+
+| Route | Access | What it gives you |
+|---|---|---|
+| [LinkedIn](sweeps/README.md#1-linkedin-logged-in-via-mcp) | logged-in MCP browser | the core board; light daily calls survive, volume does not |
+| [Indeed](sweeps/README.md#2-indeed-logged-in-headful-browser) | logged-in headful window | **salaries on every card**, different inventory from LinkedIn |
+| [radarak](sweeps/README.md#3-radarak-career-page-aggregator-no-login) | none | career-page aggregator; expires fast, apply within days |
+
+Hard-won gotchas are in the runbook: Indeed blocks headless browsers (run
+the sweep in a visible window), radarak cuts job URLs short (verify via the
+Ashby posting API for ATS-hosted companies), LinkedIn zips its result
+arrays positionally (match IDs by URL). Everything the sweeps find lands in
+the tracker as `Found` with source, salary, and mode pre-filled - you flip
+statuses as you apply.
 
 ## Credits and license
 

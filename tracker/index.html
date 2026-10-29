@@ -67,6 +67,9 @@
     <select class="filter" id="f_loc" onchange="render()">
       <option value="">All locations</option>
     </select>
+    <select class="filter" id="f_source" onchange="render()">
+      <option value="">All sources</option>
+    </select>
     <button id="f_top" onclick="toggleTop()">☆ Top picks</button>
     <button id="f_easy" onclick="toggleEasy()">Easy Apply</button>
     <select class="filter" id="f_by" onchange="render()">
@@ -135,9 +138,17 @@ function toggleEasy(){
 }
 function render(){
   const filter = $("filter").value;
-  const fm = $("f_mode").value, ft = $("f_type").value, fl = $("f_loc").value, fb = $("f_by").value;
+  const fm = $("f_mode").value, ft = $("f_type").value, fl = $("f_loc").value, fb = $("f_by").value, fsrc = $("f_source").value;
   const byAhmed = a => !a.source || /ahmed|added manually/i.test(a.source);
-  const shown = apps.filter(a => (!filter || a.status === filter) && (!fm || a.mode === fm) && (!ft || a.type === ft) && (!fl || (a.location||"") === fl) && (!topOnly || a.top) && (!easyOnly || a.easy) && (!fb || (fb === "ahmed" ? byAhmed(a) : !byAhmed(a))));
+  const srcCat = a => { const s = (a.source||"").toLowerCase();
+    if (s.includes("indeed")) return "Indeed";
+    if (s.includes("linkedin")) return "LinkedIn";
+    if (s.includes("radarak")) return "radarak";
+    if (/hn |hacker|who is hiring/.test(s)) return "HN";
+    if (/remotive|remoteok|jobicy|wework|wwr|board/.test(s)) return "Boards";
+    if (/web/.test(s)) return "Web";
+    return "Manual"; };
+  const shown = apps.filter(a => (!filter || a.status === filter) && (!fm || a.mode === fm) && (!ft || a.type === ft) && (!fl || (a.location||"") === fl) && (!topOnly || a.top) && (!easyOnly || a.easy) && (!fb || (fb === "ahmed" ? byAhmed(a) : !byAhmed(a))) && (!fsrc || srcCat(a) === fsrc));
   const counts = {};
   apps.forEach(a => counts[a.status] = (counts[a.status]||0)+1);
   const CV_OPTIONS = [...new Set(apps.map(a => a.cv).filter(Boolean))];
@@ -154,6 +165,12 @@ function render(){
     const cur = floc.value;
     const locs = [...new Set(apps.map(a => a.location).filter(Boolean))].sort();
     floc.innerHTML = '<option value="">All locations</option>' + locs.map(l => `<option ${l===cur?"selected":""}>${esc(l)}</option>`).join("");
+  }
+  const fsource = $("f_source");
+  if (fsource){
+    const cur = fsource.value;
+    const cats = [...new Set(apps.map(a => srcCat(a)))].sort();
+    fsource.innerHTML = '<option value="">All sources</option>' + cats.map(c => `<option ${c===cur?"selected":""}>${esc(c)}</option>`).join("");
   }
   const ncv = $("n_cv");
   if (ncv) ncv.innerHTML = '<option value=""></option>' + CV_OPTIONS.map(s=>`<option>${esc(s)}</option>`).join("");

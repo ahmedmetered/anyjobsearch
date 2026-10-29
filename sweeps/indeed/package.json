@@ -1,0 +1,8 @@
+{
+  "name": "anyjobsearch-indeed-sweep",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "patchright": "^1.64.2"
+  }
+}
