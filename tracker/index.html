@@ -5,229 +5,371 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>anyjobsearch · Application Tracker</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: #0b0b0d; color: #f2f2f3; font-size: 14px; line-height: 1.5; padding: 24px 18px 60px; }
-  .wrap { max-width: 1000px; margin: 0 auto; }
-  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
-  .sub { color: #9d9da8; font-size: 13px; margin: 4px 0 18px; }
-  .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .chip { border: 1px solid #27272b; background: #131316; border-radius: 999px; padding: 4px 12px; font-size: 12px; color: #a4a4ae; }
-  .chip b { color: #f2f2f3; }
-  .chip.hot b { color: #d6a955; }
-  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
-  .toolbar .spacer { flex: 1; }
-  button { background: #131316; color: #f2f2f3; border: 1px solid #27272b; border-radius: 7px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
-  button:hover { border-color: #3d3d44; }
-  button.gold { background: #d6a955; border-color: #d6a955; color: #181205; font-weight: 600; }
-  button.danger { color: #f28b82; }
-  select, input, textarea { background: #0b0b0d; border: 1px solid #27272b; color: #f2f2f3; border-radius: 6px; padding: 6px 8px; font-size: 13px; font-family: inherit; }
-  select:focus, input:focus, textarea:focus { outline: none; border-color: #d6a955; }
-  .filter { min-width: 160px; }
-  .card { background: #131316; border: 1px solid #27272b; border-radius: 11px; padding: 14px 16px; margin-bottom: 10px; }
-  .card:hover { border-color: #3d3d44; }
-  .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .co { font-weight: 700; font-size: 15px; }
-  .co a { color: #f2f2f3; }
-  .role { color: #d6a955; font-size: 13px; }
-  .meta { font-size: 12px; color: #7e7e88; margin-top: 2px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
-  label { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #7e7e88; margin-bottom: 3px; }
-  textarea { width: 100%; min-height: 52px; resize: vertical; }
-  .full { margin-top: 8px; }
-  .foot { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .updated { font-size: 11px; color: #7e7e88; }
-  .empty { border: 1px dashed #27272b; border-radius: 11px; padding: 30px; text-align: center; color: #7e7e88; }
-  .hint { font-size: 11.5px; color: #7e7e88; margin-top: 14px; }
-  .new { border: 1px dashed #27272b; border-radius: 11px; padding: 14px 16px; margin-bottom: 10px; display: none; }
-  .new.open { display: block; }
-  #importbox { display: none; margin-top: 8px; }
-  #importbox.open { display: block; }
-  #importbox textarea { width: 100%; min-height: 90px; }
+  :root{
+    --bg:#F5F5F7; --surface:#FFFFFF;
+    --ink:#1D1D1F; --ink-2:#6E6E73; --ink-3:#86868B;
+    --hairline:#D2D2D7; --hairline-soft:#E8E8ED;
+    --accent:#0071E3; --accent-press:#0060C0; --accent-soft:rgba(0,113,227,.09);
+    --good:#1D7A36; --good-tint:#E6F4EA;
+    --star:#946A00; --star-tint:#FFF3C9;
+    --danger:#D70015; --danger-tint:#FCE9EA;
+    --track:#E9E9EB;
+    --radius-card:14px; --radius-ctl:980px; --radius-fld:8px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:15px; line-height:1.47;
+    padding:28px 20px 72px;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  ::selection { background:var(--accent-soft); }
+  ::caret { caret-color:var(--accent); }
+  *:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
+  ::-webkit-scrollbar { width:11px; height:11px; }
+  ::-webkit-scrollbar-thumb { background:#C7C7CC; border-radius:6px; border:3px solid var(--bg); }
+  ::-webkit-scrollbar-track { background:transparent; }
+
+  .wrap { max-width:1060px; margin:0 auto; }
+
+  /* masthead */
+  .masthead { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+  h1 { font-size:26px; font-weight:700; letter-spacing:-0.022em; }
+  .sub { color:var(--ink-2); font-size:13.5px; margin-top:3px; }
+  .masthead-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* buttons */
+  button {
+    font:inherit; font-size:13.5px; font-weight:500; color:var(--ink);
+    background:var(--surface); border:1px solid var(--hairline);
+    border-radius:var(--radius-ctl); padding:7px 15px; cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  button:hover { background:#FAFAFC; border-color:#B9B9C0; }
+  button:active { transform:scale(.98); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  button.primary:hover { background:var(--accent-press); border-color:var(--accent-press); }
+  button.on { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+  button.on:hover { background:#000; }
+  button.danger { color:var(--danger); }
+  button.icon { padding:7px 11px; font-weight:600; }
+  button.icon[aria-pressed="true"] { background:var(--star-tint); border-color:#EBD98F; color:var(--star); }
+  button.icon.ea[aria-pressed="true"] { background:var(--good-tint); border-color:#BFE3C8; color:var(--good); }
+
+  /* summary chips */
+  .stats { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .chip {
+    display:inline-flex; align-items:baseline; gap:6px;
+    background:var(--surface); border-radius:10px; padding:7px 13px;
+    font-size:13px; color:var(--ink-2);
+  }
+  .chip b { font-size:16px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
+  .chip.hot { background:var(--ink); color:rgba(255,255,255,.72); }
+  .chip.hot b { color:#fff; }
+
+  /* pipeline bar = the status filter */
+  .pipeline { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px; }
+  .seg {
+    display:inline-flex; align-items:baseline; gap:6px;
+    background:var(--surface); border:1px solid var(--hairline-soft);
+    border-radius:var(--radius-ctl); padding:6px 13px; cursor:pointer;
+    font:inherit; font-size:13px; color:var(--ink-2);
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .seg b { font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .seg:hover { border-color:#B9B9C0; background:#FAFAFC; }
+  .seg[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:rgba(255,255,255,.75); }
+  .seg[aria-pressed="true"] b { color:#fff; }
+  .seg.none b { color:var(--ink-3); font-weight:500; }
+  .seg.none { border-style:dashed; }
+
+  /* toolbar */
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; }
+  .toolbar .spacer { flex:1; }
+  select.filter, select.ctl, input.ctl, textarea.ctl {
+    font:inherit; font-size:13.5px; color:var(--ink);
+    background:var(--surface); border:1px solid var(--hairline);
+    border-radius:var(--radius-fld); padding:7px 10px;
+    transition:border-color .15s ease;
+  }
+  select.filter { border-radius:var(--radius-ctl); padding:7px 13px; }
+  select:hover, input:hover, textarea:hover { border-color:#B9B9C0; }
+  select:focus, input:focus, textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .btn.toggled { background:var(--ink); border-color:var(--ink); color:#fff; }
+
+  /* import drawer */
+  #importbox { display:none; margin-bottom:16px; background:var(--surface); border-radius:var(--radius-card); padding:16px; }
+  #importbox.open { display:block; }
+  #importbox textarea { width:100%; min-height:96px; resize:vertical; }
+  #importbox .row { margin-top:8px; display:flex; gap:8px; align-items:center; }
+  #importbox .note { font-size:12.5px; color:var(--ink-2); }
+
+  /* cards */
+  #list { display:flex; flex-direction:column; gap:10px; }
+  .card {
+    background:var(--surface); border-radius:var(--radius-card);
+    padding:15px 17px 12px;
+    animation:rise .4s cubic-bezier(.16,1,.3,1) both;
+    animation-delay:calc(min(var(--i,0),18) * 16ms);
+  }
+  @keyframes rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .card { animation:none; } button, .seg { transition:none; } }
+  .row1 { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+  .co { font-weight:600; font-size:16.5px; letter-spacing:-0.014em; }
+  .co a { color:var(--ink); text-decoration:none; border-bottom:1px solid var(--hairline); }
+  .co a:hover { color:var(--accent); border-color:var(--accent); }
+  .role { color:var(--accent); font-size:13.5px; font-weight:500; }
+  .meta { font-size:12.5px; color:var(--ink-2); margin-top:3px; display:flex; align-items:center; flex-wrap:wrap; gap:5px; }
+  .meta .dot::before { content:"·"; margin-right:5px; color:var(--hairline); }
+  .tag {
+    display:inline-block; font-size:11px; font-weight:600; letter-spacing:.02em;
+    background:var(--track); color:#3C3C43; border-radius:6px; padding:2px 7px;
+  }
+  .rowbtns { display:flex; gap:6px; flex:none; }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 10px; margin-top:11px; }
+  label { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-2); margin-bottom:3px; }
+  #importbox label { text-transform:none; font-size:13px; font-weight:500; letter-spacing:0; }
+  select.ctl, input.ctl { width:100%; padding:6px 9px; font-size:13px; }
+  textarea.ctl { width:100%; min-height:34px; padding:5px 9px; font-size:13px; resize:vertical; field-sizing:content; min-block-size:34px; }
+  .full { margin-top:9px; }
+  .foot { margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .updated { font-size:11.5px; color:var(--ink-2); font-variant-numeric:tabular-nums; }
+
+  .empty { background:var(--surface); border-radius:var(--radius-card); padding:44px 20px; text-align:center; color:var(--ink-2); }
+  .empty b { display:block; color:var(--ink); font-size:16px; margin-bottom:4px; font-weight:600; }
+
+  /* add sheet - the one declared elevation */
+  .sheet { display:none; background:var(--surface); border-radius:16px; padding:18px; margin:14px 0; box-shadow:0 12px 32px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.06); }
+  .sheet.open { display:block; }
+  .sheet .grid { margin-top:0; }
+  .sheet-actions { margin-top:12px; display:flex; gap:8px; }
+
+  .hint { font-size:12.5px; color:var(--ink-2); margin-top:18px; max-width:72ch; }
+
+  @media (max-width:640px){
+    body { padding:18px 12px 56px; }
+    .masthead { align-items:flex-start; flex-direction:column; }
+    .grid { grid-template-columns:repeat(2,1fr); }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>anyjobsearch · Application Tracker</h1>
-  <p class="sub">Served from your machine. Data lives in tracker-data.json next to the server - export it, back it up, feed it from the hunt.</p>
+  <header class="masthead">
+    <div>
+      <h1>anyjobsearch</h1>
+      <p class="sub">Application tracker · runs on your machine · data lives in tracker-data.json next to the server</p>
+    </div>
+    <div class="masthead-actions">
+      <button class="primary" onclick="openNew()">+ Add application</button>
+      <button onclick="toggleImport()">Import</button>
+      <button onclick="exportJson()">Export backup</button>
+    </div>
+  </header>
+
   <div class="stats" id="stats"></div>
+  <nav class="pipeline" id="pipeline" aria-label="Pipeline stages"></nav>
+
   <div class="toolbar">
-    <select class="filter" id="filter" onchange="render()">
-      <option value="">All statuses</option>
-      <option>Found</option><option>Ready to send</option><option>Applied</option><option>Follow-up sent</option>
-      <option>Replied</option><option>Interviewing</option><option>Offer</option><option>Rejected</option><option>Withdrawn</option>
-    </select>
-    <select class="filter" id="f_mode" onchange="render()">
+    <select class="filter" id="f_mode" onchange="render()" aria-label="Filter by work mode">
       <option value="">All modes</option>
       <option>Remote</option><option>Hybrid</option><option>On-site</option>
     </select>
-    <select class="filter" id="f_type" onchange="render()">
+    <select class="filter" id="f_type" onchange="render()" aria-label="Filter by contract type">
       <option value="">All types</option>
       <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Freelance</option>
     </select>
-    <select class="filter" id="f_loc" onchange="render()">
+    <select class="filter" id="f_loc" onchange="render()" aria-label="Filter by location" data-all="All locations">
       <option value="">All locations</option>
     </select>
-    <select class="filter" id="f_source" onchange="render()">
+    <select class="filter" id="f_source" onchange="render()" aria-label="Filter by source" data-all="All sources">
       <option value="">All sources</option>
     </select>
-    <button id="f_top" onclick="toggleTop()">☆ Top picks</button>
-    <button id="f_easy" onclick="toggleEasy()">Easy Apply</button>
-    <select class="filter" id="f_by" onchange="render()">
+    <select class="filter" id="f_by" onchange="render()" aria-label="Filter by who found it">
       <option value="">Found by: everyone</option>
       <option value="ahmed">Found by: Ahmed</option>
       <option value="zcode">Found by: ZCode</option>
     </select>
-    <span class="spacer"></span>
-    <button class="gold" onclick="openNew()">+ Add application</button>
-    <button onclick="toggleImport()">Import found jobs (JSON)</button>
-    <button onclick="exportJson()">Export backup</button>
+    <button id="f_top" onclick="toggleTop()" aria-pressed="false">☆ Top picks</button>
+    <button id="f_easy" onclick="toggleEasy()" aria-pressed="false">Easy Apply</button>
   </div>
-  <div id="importbox"><label>Paste an array of found jobs - they import with status "Found" and dedupe on company+role</label><textarea id="importtext" placeholder='[{"company":"...","role":"...","url":"..."}]'></textarea><div style="margin-top:6px"><button class="gold" onclick="doImport()">Import</button></div></div>
+
+  <div id="importbox">
+    <label for="importtext">Paste an array of found jobs — they import with status "Found" and dedupe on company + role</label>
+    <textarea id="importtext" class="ctl" placeholder='[{"company":"...","role":"...","url":"..."}]'></textarea>
+    <div class="row">
+      <button class="primary" onclick="doImport()">Import</button>
+      <span class="note">Duplicates are skipped automatically.</span>
+    </div>
+  </div>
+
   <div id="list"></div>
-  <div class="new" id="newform">
+
+  <div class="sheet" id="newform" role="dialog" aria-label="Add application">
     <div class="grid">
-      <div><label>Company</label><input id="n_company" placeholder="Company"></div>
-      <div><label>Role</label><input id="n_role" placeholder="Role"></div>
-      <div><label>CV sent</label><select id="n_cv"></select></div>
-      <div><label>Work mode</label>
-        <select id="n_mode">
+      <div><label for="n_company">Company</label><input class="ctl" id="n_company" placeholder="Company"></div>
+      <div><label for="n_role">Role</label><input class="ctl" id="n_role" placeholder="Role"></div>
+      <div><label for="n_cv">CV sent</label>
+        <select class="ctl" id="n_cv">
+          <option value=""></option>
+          <option>EN Developer PDF</option>
+          <option>IT Sviluppatore PDF</option>
+          <option>Data Analyst EN PDF</option>
+          <option>Data Analyst IT PDF</option>
+          <option>Other…</option>
+        </select>
+      </div>
+      <div><label for="n_mode">Work mode</label>
+        <select class="ctl" id="n_mode">
           <option value=""></option>
           <option>Remote</option><option>Hybrid</option><option>On-site</option>
         </select>
       </div>
-      <div><label>Type</label>
-        <select id="n_type">
+      <div><label for="n_type">Type</label>
+        <select class="ctl" id="n_type">
           <option value=""></option>
           <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Freelance</option>
         </select>
       </div>
-      <div><label>Location</label><input id="n_loc" placeholder="e.g. Milan"></div>
-      <div><label>Applied date</label><input type="date" id="n_date"></div>
+      <div><label for="n_loc">Location</label><input class="ctl" id="n_loc" placeholder="e.g. Milan"></div>
+      <div><label for="n_date">Applied date</label><input class="ctl" type="date" id="n_date"></div>
     </div>
-    <div style="margin-top:8px"><label>Notes</label><textarea id="n_notes"></textarea></div>
-    <div style="margin-top:8px; display:flex; gap:8px;">
-      <button class="gold" onclick="addApp()">Save application</button>
+    <div class="full"><label for="n_notes">Notes</label><textarea class="ctl" id="n_notes"></textarea></div>
+    <div class="sheet-actions">
+      <button class="primary" onclick="addApp()">Add application</button>
       <button onclick="document.getElementById('newform').classList.remove('open')">Cancel</button>
     </div>
   </div>
-  <p class="hint">Pipeline: Found → Ready to send → Applied → Follow-up sent → Replied → Interviewing → Offer / Rejected / Withdrawn. After ten recorded outcomes, review which scores, titles and sources actually convert.</p>
+
+  <p class="hint">Found → Ready to send → Applied → Follow-up sent → Replied → Interviewing → Offer / Rejected / Withdrawn. An entry becomes an application the moment it leaves Found. After ten recorded outcomes, review which stages, titles and sources actually convert.</p>
 </div>
+
 <script>
 const API = "/api/apps";
+const STAGES = ["Found","Ready to send","Applied","Follow-up sent","Replied","Interviewing","Offer","Rejected","Withdrawn"];
 let apps = [];
+let statusSel = "";   // "" = all stages
 let topOnly = false;
 let easyOnly = false;
 const $ = id => document.getElementById(id);
 const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
+const byAhmed = a => !a.source || /ahmed|added manually/i.test(a.source);
+const srcCat = a => { const s = (a.source||"").toLowerCase();
+  if (s.includes("indeed")) return "Indeed";
+  if (s.includes("linkedin")) return "LinkedIn";
+  if (s.includes("radarak")) return "radarak";
+  if (/hn |hacker|who is hiring/.test(s)) return "HN";
+  if (/remotive|remoteok|jobicy|wework|wwr|board/.test(s)) return "Boards";
+  if (/web/.test(s)) return "Web";
+  return "Manual"; };
+
 async function refresh(){
   apps = await (await fetch(API)).json();
   render();
 }
-function toggleTop(){
-  topOnly = !topOnly;
-  const b = $("f_top");
-  b.textContent = topOnly ? "★ Top picks" : "☆ Top picks";
-  b.classList.toggle("gold", topOnly);
-  render();
-}
-function toggleEasy(){
-  easyOnly = !easyOnly;
-  $("f_easy").classList.toggle("gold", easyOnly);
-  render();
-}
+
 function render(){
-  const filter = $("filter").value;
   const fm = $("f_mode").value, ft = $("f_type").value, fl = $("f_loc").value, fb = $("f_by").value, fsrc = $("f_source").value;
-  const byAhmed = a => !a.source || /ahmed|added manually/i.test(a.source);
-  const srcCat = a => { const s = (a.source||"").toLowerCase();
-    if (s.includes("indeed")) return "Indeed";
-    if (s.includes("linkedin")) return "LinkedIn";
-    if (s.includes("radarak")) return "radarak";
-    if (/hn |hacker|who is hiring/.test(s)) return "HN";
-    if (/remotive|remoteok|jobicy|wework|wwr|board/.test(s)) return "Boards";
-    if (/web/.test(s)) return "Web";
-    return "Manual"; };
-  const shown = apps.filter(a => (!filter || a.status === filter) && (!fm || a.mode === fm) && (!ft || a.type === ft) && (!fl || (a.location||"") === fl) && (!topOnly || a.top) && (!easyOnly || a.easy) && (!fb || (fb === "ahmed" ? byAhmed(a) : !byAhmed(a))) && (!fsrc || srcCat(a) === fsrc));
+  const shown = apps.filter(a =>
+    (!statusSel || a.status === statusSel) &&
+    (!fm || a.mode === fm) && (!ft || a.type === ft) &&
+    (!fl || (a.location||"") === fl) && (!fsrc || srcCat(a) === fsrc) &&
+    (!topOnly || a.top) && (!easyOnly || a.easy));
+
+  // summary chips
   const counts = {};
   apps.forEach(a => counts[a.status] = (counts[a.status]||0)+1);
-  const CV_OPTIONS = [...new Set(apps.map(a => a.cv).filter(Boolean))];
-  const order = ["Found","Ready to send","Applied","Follow-up sent","Replied","Interviewing","Offer","Rejected","Withdrawn"];
   const nLeads = counts["Found"] || 0;
   const nApps = apps.length - nLeads;
   $("stats").innerHTML =
     `<span class="chip hot">Applications: <b>${nApps}</b></span>` +
     `<span class="chip">Leads (Found): <b>${nLeads}</b></span>` +
-    `<span class="chip">All entries: <b>${apps.length}</b></span>` +
-    order.filter(s => s !== "Found").map(s => counts[s] ? `<span class="chip">${s}: <b>${counts[s]}</b></span>` : "").join("");
-  const floc = $("f_loc");
-  if (floc){
-    const cur = floc.value;
-    const locs = [...new Set(apps.map(a => a.location).filter(Boolean))].sort();
-    floc.innerHTML = '<option value="">All locations</option>' + locs.map(l => `<option ${l===cur?"selected":""}>${esc(l)}</option>`).join("");
+    `<span class="chip">All entries: <b>${apps.length}</b></span>`;
+
+  // pipeline bar (is the status filter)
+  $("pipeline").innerHTML =
+    seg("", "All", apps.length) +
+    STAGES.map(s => seg(s, s, counts[s] || 0)).join("");
+  function seg(val, label, n){
+    return `<button class="seg${n===0?" none":""}" aria-pressed="${statusSel===val}" onclick="setStatus(${JSON.stringify(val)})"><b>${n}</b> ${esc(label)}</button>`;
   }
-  const fsource = $("f_source");
-  if (fsource){
-    const cur = fsource.value;
-    const cats = [...new Set(apps.map(a => srcCat(a)))].sort();
-    fsource.innerHTML = '<option value="">All sources</option>' + cats.map(c => `<option ${c===cur?"selected":""}>${esc(c)}</option>`).join("");
+
+  // dynamic filter options
+  const fill = (id, values) => {
+    const el = $(id); if (!el) return;
+    const cur = el.value;
+    const allLabel = (el.getAttribute && el.getAttribute("data-all")) || el.dataset?.all || "All";
+    el.innerHTML = `<option value="">${esc(allLabel)}</option>` +
+      values.map(v => `<option ${v===cur?"selected":""}>${esc(v)}</option>`).join("");
+  };
+  fill("f_loc", [...new Set(apps.map(a => a.location).filter(Boolean))].sort());
+  fill("f_source", [...new Set(apps.map(a => srcCat(a)))].sort());
+
+  // list
+  if (!shown.length){
+    $("list").innerHTML = `<div class="empty"><b>Nothing under this filter</b>Loosen a filter, or add an application and the hunt will feed it.</div>`;
+    return;
   }
-  const ncv = $("n_cv");
-  if (ncv) ncv.innerHTML = '<option value=""></option>' + CV_OPTIONS.map(s=>`<option>${esc(s)}</option>`).join("");
-  if (!shown.length){ $("list").innerHTML = '<div class="empty">Nothing here yet. Add an application or import found jobs.</div>'; return; }
-  const sorted = shown.slice().sort((x,y)=> order.indexOf(x.status)-order.indexOf(y.status) || (y.updated||"").localeCompare(x.updated||""));
-  $("list").innerHTML = sorted.map(a => {
-    const i = apps.indexOf(a);
+  const sorted = shown.slice().sort((x,y) =>
+    STAGES.indexOf(x.status)-STAGES.indexOf(y.status) || (y.updated||"").localeCompare(x.updated||""));
+  $("list").innerHTML = sorted.map((a,idx) => {
+    const tags = [a.mode, a.type, a.location].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join("");
+    const cvOpts = ["EN Developer PDF","IT Sviluppatore PDF","Data Analyst EN PDF","Data Analyst IT PDF"];
+    const cvCustom = a.cv && !cvOpts.includes(a.cv);
     return `
-  <div class="card">
+  <article class="card" style="--i:${Math.min(idx,18)}">
     <div class="row1">
-      <div><span class="co">${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.company)}</a>` : esc(a.company)}</span> · <span class="role">${esc(a.role)}</span><div class="meta">${esc(a.source||"")} ${a.salary? "· "+esc(a.salary):""}</div></div>
-      <button class="${a.top?"gold":""}" title="Top pick" onclick="patch('${a.id}', {top: ${!a.top}})">★</button>
-      <button class="${a.easy?"gold":""}" title="Easy Apply" onclick="patch('${a.id}', {easy: ${!a.easy}})">Easy Apply</button>
-      <button class="danger" onclick="del('${a.id}')">Delete</button>
+      <div>
+        <span class="co">${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.company)}</a>` : esc(a.company)}</span> · <span class="role">${esc(a.role)}</span>
+        <div class="meta">${esc(a.source||"")}${a.salary?`<span class="dot">${esc(a.salary)}</span>`:""}${tags}</div>
+      </div>
+      <div class="rowbtns">
+        <button class="icon" aria-pressed="${!!a.top}" title="Top pick" aria-label="Top pick" onclick="patch('${a.id}', {top: ${!a.top}})">★</button>
+        <button class="icon ea" aria-pressed="${!!a.easy}" title="Easy Apply" onclick="patch('${a.id}', {easy: ${!a.easy}})">Easy&nbsp;Apply</button>
+        <button class="danger" onclick="del('${a.id}')">Delete</button>
+      </div>
     </div>
     <div class="grid">
-      <div><label>Outcome / status</label>
-        <select onchange="patch('${a.id}', {status: this.value})">
-          ${order.map(s=>`<option ${s===a.status?"selected":""}>${s}</option>`).join("")}
+      <div><label for="st-${a.id}">Status</label>
+        <select class="ctl" id="st-${a.id}" onchange="patch('${a.id}', {status: this.value})">
+          ${STAGES.map(s=>`<option ${s===a.status?"selected":""}>${s}</option>`).join("")}
         </select>
       </div>
-      <div><label>CV sent</label>
-        <div style="display:flex; gap:4px;">
-          <select style="min-width:130px;" onchange="cvSelect('${a.id}', this, this.nextElementSibling)">
-            ${CV_OPTIONS.map(s=>`<option value="${esc(s)}" ${a.cv===s?"selected":""}>${esc(s)}</option>`).join("")}
-            <option value="__other" ${a.cv && !CV_OPTIONS.includes(a.cv)?"selected":""}>Other...</option>
+      <div><label for="cv-${a.id}">CV sent</label>
+        <div style="display:flex;gap:4px;">
+          <select class="ctl" id="cv-${a.id}" style="min-width:0;flex:1;" onchange="cvSelect('${a.id}', this, this.nextElementSibling)">
+            ${cvOpts.map(s=>`<option value="${s}" ${a.cv===s?"selected":""}>${s}</option>`).join("")}
+            <option value="__other" ${cvCustom?"selected":""}>Other…</option>
           </select>
-          <input id="cvin-${a.id}" value="${esc(a.cv||"")}" style="display:${a.cv && !CV_OPTIONS.includes(a.cv)?"":"none"}; min-width:130px;" onchange="patch('${a.id}', {cv: this.value})">
+          <input class="ctl" id="cvin-${a.id}" value="${esc(a.cv||"")}" style="display:${cvCustom?"":"none"};flex:1;min-width:0;" onchange="patch('${a.id}', {cv: this.value})" aria-label="Custom CV label">
         </div>
       </div>
-      <div><label>Applied date</label><input type="date" value="${esc(a.date||"")}" onchange="patch('${a.id}', {date: this.value})"></div>
-      <div><label>Work mode</label>
-        <select onchange="patch('${a.id}', {mode: this.value})">
+      <div><label for="dt-${a.id}">Applied date</label><input class="ctl" type="date" id="dt-${a.id}" value="${esc(a.date||"")}" onchange="patch('${a.id}', {date: this.value})"></div>
+      <div><label for="md-${a.id}">Work mode</label>
+        <select class="ctl" id="md-${a.id}" onchange="patch('${a.id}', {mode: this.value})">
           <option value=""></option>
-          <option ${a.mode==="Remote"?"selected":""}>Remote</option>
-          <option ${a.mode==="Hybrid"?"selected":""}>Hybrid</option>
-          <option ${a.mode==="On-site"?"selected":""}>On-site</option>
+          ${["Remote","Hybrid","On-site"].map(m=>`<option ${a.mode===m?"selected":""}>${m}</option>`).join("")}
         </select>
       </div>
-      <div><label>Type</label>
-        <select onchange="patch('${a.id}', {type: this.value})">
+      <div><label for="ty-${a.id}">Type</label>
+        <select class="ctl" id="ty-${a.id}" onchange="patch('${a.id}', {type: this.value})">
           <option value=""></option>
-          <option ${a.type==="Full-time"?"selected":""}>Full-time</option>
-          <option ${a.type==="Part-time"?"selected":""}>Part-time</option>
-          <option ${a.type==="Contract"?"selected":""}>Contract</option>
-          <option ${a.type==="Internship"?"selected":""}>Internship</option>
-          <option ${a.type==="Freelance"?"selected":""}>Freelance</option>
+          ${["Full-time","Part-time","Contract","Internship","Freelance"].map(m=>`<option ${a.type===m?"selected":""}>${m}</option>`).join("")}
         </select>
       </div>
-      <div><label>Location</label><input value="${esc(a.location||"")}" placeholder="e.g. Milan" onchange="patch('${a.id}', {location: this.value})"></div>
-      <div><label>Next action</label><input value="${esc(a.next||"")}" placeholder="e.g. follow-up day 7" onchange="patch('${a.id}', {next: this.value})"></div>
+      <div><label for="lc-${a.id}">Location</label><input class="ctl" id="lc-${a.id}" value="${esc(a.location||"")}" placeholder="e.g. Milan" onchange="patch('${a.id}', {location: this.value})"></div>
+      <div><label for="nx-${a.id}">Next action</label><input class="ctl" id="nx-${a.id}" value="${esc(a.next||"")}" placeholder="e.g. follow-up day 7" onchange="patch('${a.id}', {next: this.value})"></div>
     </div>
-    <div class="full"><label>Notes</label><textarea onchange="patch('${a.id}', {notes: this.value})">${esc(a.notes||"")}</textarea></div>
-    <div class="foot"><span class="updated">last updated: ${esc(a.updated||"-")}</span></div>
-  </div>`;
+    <div class="full"><label for="nt-${a.id}">Notes</label><textarea class="ctl" id="nt-${a.id}" onchange="patch('${a.id}', {notes: this.value})">${esc(a.notes||"")}</textarea></div>
+    <div class="foot"><span class="updated">updated ${esc(a.updated||"—")}</span></div>
+  </article>`;
   }).join("");
 }
+
+function setStatus(v){ statusSel = v; render(); }
 async function patch(id, fields){
   await fetch(`${API}/${id}`, {method:"PATCH", headers:{"content-type":"application/json"}, body: JSON.stringify(fields)});
   await refresh();
@@ -236,28 +378,48 @@ function cvSelect(id, sel, input){
   if (sel.value === "__other"){ input.style.display = ""; input.focus(); }
   else { input.style.display = "none"; patch(id, {cv: sel.value}); }
 }
+function toggleTop(){
+  topOnly = !topOnly;
+  const b = $("f_top");
+  b.textContent = topOnly ? "★ Top picks" : "☆ Top picks";
+  b.classList.toggle("on", topOnly);
+  b.setAttribute("aria-pressed", String(topOnly));
+  render();
+}
+function toggleEasy(){
+  easyOnly = !easyOnly;
+  const b = $("f_easy");
+  b.classList.toggle("on", easyOnly);
+  b.setAttribute("aria-pressed", String(easyOnly));
+  render();
+}
 function openNew(){ $("newform").classList.add("open"); $("n_company").focus(); }
 async function addApp(){
   const company = $("n_company").value.trim();
   if (!company){ alert("Company is required"); return; }
   await fetch(API, {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({
-    company, role: $("n_role").value.trim(), cv: $("n_cv").value.trim(), mode: $("n_mode").value, type: $("n_type").value, location: $("n_loc").value.trim(), date: $("n_date").value, status: "Applied", notes: $("n_notes").value.trim()
+    company, role: $("n_role").value.trim(), cv: $("n_cv").value.trim(), mode: $("n_mode").value, type: $("n_type").value,
+    location: $("n_loc").value.trim(), date: $("n_date").value, status: "Applied", notes: $("n_notes").value.trim()
   })});
-  ["n_company","n_role","n_cv","n_notes","n_date","n_mode","n_type","n_loc"].forEach(id => $(id).value = "");
+  ["n_company","n_role","n_cv","n_mode","n_type","n_loc","n_notes","n_date"].forEach(id => $(id).value = "");
   $("newform").classList.remove("open");
   refresh();
 }
 function toggleImport(){ $("importbox").classList.toggle("open"); }
 async function doImport(){
   try {
-    const apps = JSON.parse($("importtext").value);
-    const res = await (await fetch(API + "/bulk", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({apps})})).json();
+    const list = JSON.parse($("importtext").value);
+    const res = await (await fetch(API + "/bulk", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({apps: list})})).json();
     alert(`Imported ${res.added} new (duplicates skipped)`);
     $("importtext").value = "";
     refresh();
   } catch(e){ alert("Import failed: " + e.message); }
 }
-async function del(id){ if (!confirm("Delete this application?")) return; await fetch(`${API}/${id}`, {method:"DELETE"}); refresh(); }
+async function del(id){
+  if (!confirm("Delete this application?")) return;
+  await fetch(`${API}/${id}`, {method:"DELETE"});
+  refresh();
+}
 async function exportJson(){
   const blob = new Blob([JSON.stringify(apps,null,2)], {type:"application/json"});
   const a = document.createElement("a");
