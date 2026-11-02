@@ -23,6 +23,7 @@
     --radius-card:14px; --radius-ctl:980px; --radius-fld:8px;
   }
   [data-theme="dark"]{
+    color-scheme:dark;
     --bg:#0A0A0C; --surface:#17171A; --surface-2:#1D1D21;
     --ink:#F5F5F7; --ink-2:#A1A1A6; --ink-3:#8E8E93;
     --hairline:#38383D; --hairline-soft:#2A2A2E;
@@ -103,13 +104,17 @@
   /* toolbar */
   .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; }
   .toolbar .spacer { flex:1; }
-  select.filter, select.ctl, input.ctl, textarea.ctl {
+  select.filter, select.ctl, input.filter, input.ctl, textarea.ctl {
     font:inherit; font-size:13.5px; color:var(--ink);
     background:var(--surface); border:1px solid var(--hairline);
     border-radius:var(--radius-fld); padding:7px 10px;
     transition:border-color .15s ease;
   }
   select.filter { border-radius:var(--radius-ctl); padding:7px 13px; }
+  input.filter { border-radius:var(--radius-ctl); padding:7px 15px; }
+  ::placeholder { color:var(--ink-3); opacity:1; }
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-decoration { -webkit-appearance:none; appearance:none; }
   select:hover, input:hover, textarea:hover { border-color:#B9B9C0; }
   select:focus, input:focus, textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .btn.toggled { background:var(--ink); border-color:var(--ink); color:#fff; }
@@ -193,6 +198,9 @@
   <nav class="pipeline" id="pipeline" aria-label="Pipeline stages"></nav>
 
   <div class="toolbar">
+    <input type="search" id="f_q" class="filter" placeholder="Search company, role, notes…" aria-label="Search applications"
+           oninput="onSearch()" onkeydown="if(event.key==='Escape'){this.value='';render();}"
+           style="flex:1 1 240px;min-width:200px;">
     <select class="filter" id="f_mode" onchange="render()" aria-label="Filter by work mode">
       <option value="">All modes</option>
       <option>Remote</option><option>Hybrid</option><option>On-site</option>
@@ -295,11 +303,14 @@ async function refresh(){
 
 function render(){
   const fm = $("f_mode").value, ft = $("f_type").value, fl = $("f_loc").value, fb = $("f_by").value, fsrc = $("f_source").value;
+  const toks = ($("f_q").value || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const hay = a => ((a.company||"")+" "+(a.role||"")+" "+(a.location||"")+" "+(a.notes||"")+" "+(a.source||"")+" "+(a.cv||"")+" "+(a.next||"")+" "+(a.status||"")).toLowerCase();
   const shown = apps.filter(a =>
     (!statusSel || a.status === statusSel) &&
     (!fm || a.mode === fm) && (!ft || a.type === ft) &&
     (!fl || (a.location||"") === fl) && (!fsrc || srcCat(a) === fsrc) &&
-    (!topOnly || a.top) && (!easyOnly || a.easy));
+    (!topOnly || a.top) && (!easyOnly || a.easy) &&
+    (!toks.length || toks.every(t => hay(a).includes(t))));
 
   // summary chips
   const counts = {};
@@ -332,7 +343,9 @@ function render(){
 
   // list
   if (!shown.length){
-    $("list").innerHTML = `<div class="empty"><b>Nothing under this filter</b>Loosen a filter, or add an application and the hunt will feed it.</div>`;
+    $("list").innerHTML = toks.length
+      ? `<div class="empty"><b>No matches for "${esc($("f_q").value.trim())}"</b>Clear the search or loosen a filter.</div>`
+      : `<div class="empty"><b>Nothing under this filter</b>Loosen a filter, or add an application and the hunt will feed it.</div>`;
     return;
   }
   const sorted = shown.slice().sort((x,y) =>
@@ -394,6 +407,8 @@ function render(){
 }
 
 function setStatus(v){ statusSel = v; render(); }
+let qTimer = 0;
+function onSearch(){ clearTimeout(qTimer); qTimer = setTimeout(render, 120); }
 async function patch(id, fields){
   await fetch(`${API}/${id}`, {method:"PATCH", headers:{"content-type":"application/json"}, body: JSON.stringify(fields)});
   await refresh();
@@ -463,6 +478,15 @@ function toggleTheme(){
   var t = document.documentElement.dataset.theme;
   document.querySelector(".icon-sun").style.display = t === "dark" ? "" : "none";
   document.querySelector(".icon-moon").style.display = t === "dark" ? "none" : "";
+})();
+// "/" focuses search from anywhere; ?q= deep-link opens with a search applied.
+if (document.addEventListener) document.addEventListener("keydown", e => {
+  if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || "")){ e.preventDefault(); $("f_q").focus(); }
+});
+(function(){
+  if (typeof location === "undefined" || !location.search) return;
+  const q0 = new URLSearchParams(location.search).get("q");
+  if (q0) $("f_q").value = q0;
 })();
 refresh();
 </script>
