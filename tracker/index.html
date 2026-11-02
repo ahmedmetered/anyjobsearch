@@ -242,10 +242,12 @@
       <div><label for="n_cv">CV sent</label>
         <select class="ctl" id="n_cv">
           <option value=""></option>
-          <option>EN Developer PDF</option>
+          <option>Developer EN PDF</option>
           <option>IT Sviluppatore PDF</option>
           <option>Data Analyst EN PDF</option>
           <option>Data Analyst IT PDF</option>
+          <option>Product EN PDF</option>
+          <option>Product IT PDF</option>
           <option value="__other">Other…</option>
         </select>
         <input class="ctl" id="n_cv_other" placeholder="Custom CV label" style="display:none;margin-top:4px;width:100%">
@@ -352,7 +354,7 @@ function render(){
     STAGES.indexOf(x.status)-STAGES.indexOf(y.status) || (y.updated||"").localeCompare(x.updated||""));
   const listHtml = sorted.map((a,idx) => {
     const tags = [a.mode, a.type, a.location].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join("");
-    const cvOpts = ["EN Developer PDF","IT Sviluppatore PDF","Data Analyst EN PDF","Data Analyst IT PDF"];
+    const cvOpts = ["Developer EN PDF","IT Sviluppatore PDF","Data Analyst EN PDF","Data Analyst IT PDF","Product EN PDF","Product IT PDF"];
     const cvCustom = a.cv && !cvOpts.includes(a.cv);
     return `
   <article class="card" style="--i:${Math.min(idx,18)}">
