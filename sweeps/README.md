@@ -80,6 +80,14 @@ node radarak-italy.js --keywords "ai,data analyst,test automation"
 Output: `radarak-italy-hits.json` + console table, Italy only, senior-bar
 filtered.
 
+## 4. Inbox feedback (any mailbox, read-only)
+
+`sweeps/mail/` reads replies to your applications from your own mailbox over IMAP (iCloud, Gmail,
+Yahoo, Fastmail, Zoho, GMX, Proton Bridge, work Microsoft 365, or any custom server) and updates the
+tracker: rejection -> Rejected, interview invite -> Interviewing, recruiter question or test -> Replied.
+It never changes, moves or sends mail, and only applies matches it is sure about. Setup and provider
+notes: [mail/README.md](mail/README.md).
+
 ## Scheduling
 
 Wire these into a daily automation (07:00-09:00 works): start the tracker,

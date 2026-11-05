@@ -1,0 +1,5 @@
+mail-config.json
+mail-secrets.json
+node_modules/
+mail-state.json
+mail-report.json
