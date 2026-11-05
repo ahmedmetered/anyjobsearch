@@ -20,7 +20,7 @@ const argv = process.argv.slice(2);
 const arg = (name, fallback) => { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] ? argv[i + 1] : fallback; };
 const PORT = Number(arg("--port", "8788"));
 const DATA = path.resolve(arg("--data", path.join(process.cwd(), "tracker-data.json")));
-const STATUSES = ["Found", "Ready to send", "Applied", "Follow-up sent", "Replied", "Interviewing", "Offer", "Rejected", "Withdrawn"];
+const STATUSES = ["Found", "Ready to send", "Applied", "Replied", "Interviewing", "Offer", "Rejected", "Withdrawn"];
 const MODES = ["Remote", "Hybrid", "On-site"];
 const TYPES = ["Full-time", "Part-time", "Contract", "Internship", "Freelance"];
 const MAX_BODY = 2 * 1024 * 1024; // 2 MB
@@ -86,6 +86,7 @@ const normalize = a => ({
   date: cap(a.date, 10),
   next: cap(a.next, 200),
   notes: cap(a.notes, 4000),
+  added: cap(a.added, 10) || today(),
   updated: a.updated || today()
 });
 // PATCH uses the same field rules without rebuilding the record
@@ -106,6 +107,9 @@ const applyPatch = (record, patch) => {
   if ("date" in patch) next.date = cap(patch.date, 10);
   if ("next" in patch) next.next = cap(patch.next, 200);
   if ("notes" in patch) next.notes = cap(patch.notes, 4000);
+  if ("added" in patch) next.added = cap(patch.added, 10);
+  // marking something Applied stamps the application date once
+  if (next.status === "Applied" && !next.date) next.date = today();
   next.updated = today();
   return next;
 };

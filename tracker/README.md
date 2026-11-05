@@ -46,3 +46,12 @@ never sent anywhere. The page also has a one-click JSON export.
 | POST | `/api/apps/bulk` | import an array (dedupes) |
 | PATCH | `/api/apps/<id>` | update any fields |
 | DELETE | `/api/apps/<id>` | remove |
+
+## Finding things in a long list
+
+- **Filters:** stage, mode, type, location, source, found-by, job track (product, forward deployed, QA and test, data, developer and AI), region (Italy, remote Italy, remote Europe, remote worldwide, relocation), date added, salary shown, top picks, Easy Apply.
+- **Sort:** by stage, added date, salary, company, last update or applied date, both directions. Entries with no value for the chosen field always sink to the bottom.
+- **Bulk actions:** tick several cards (or "Select all shown") and mark them Applied, Rejected, Withdrawn and so on. Bulk changes and deletes show an **Undo** for 12 seconds.
+- **Hide stale / possible duplicates:** hide untouched Found roles older than three weeks; flag the same job seen on two sources.
+- **Saved views:** name a combination of filters and sort and reload it later (kept in your browser).
+- **Insights:** a collapsible table of replies, interviews and rejections by track, source and CV, so you can see what is actually working once outcomes are recorded.
