@@ -8,6 +8,7 @@
 //
 // Usage:
 //   node mail-check.mjs                  dry run, last 3 days, prints what it would change
+//   node mail-check.mjs --skip turing,adecco   ignore matches to these companies (platform rows, wrong matches)
 //   node mail-check.mjs --since 60      look back 60 days (use once to backfill rejections)
 //   node mail-check.mjs --apply          write status changes to the tracker (strong matches only)
 //   node mail-check.mjs --selftest       offline check of the classifier, matcher and provider detection
@@ -42,11 +43,12 @@ export function detectProvider(user = "") {
 export function loadConfig(dir) {
   let c = {};
   for (const f of ["mail-config.json", "mail-secrets.json"]) { // second name = older iCloud-only file
-    try { c = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); break; } catch {}
+    let raw = ""; try { raw = fs.readFileSync(path.join(dir, f), "utf8"); } catch { continue; }
+    try { c = JSON.parse(raw); break; } catch (e) { console.log(`${f} is not valid JSON (${e.message.replace(/ in JSON.*$/, "")}). Check that the password sits on one line between straight quotes, with no line break inside.`); process.exit(1); }
   }
   const env = process.env;
-  const user = env.MAIL_USER || c.user || "";
-  const password = env.MAIL_PASSWORD || c.password || c.appPassword || "";
+  const user = String(env.MAIL_USER || c.user || "").trim();
+  const password = String(env.MAIL_PASSWORD || c.password || c.appPassword || "").trim();
   const provider = (env.MAIL_PROVIDER || c.provider || detectProvider(user)).toLowerCase();
   const preset = PROVIDERS[provider] || PROVIDERS.custom;
   return {
@@ -69,6 +71,8 @@ const RULES = [
 ];
 export function classify(subject = "", body = "") {
   const text = `${subject}\n${body}`.slice(0, 6000);
+  // account / security / registration mail is never feedback on an application, whatever its body says
+  if (/(account (e|è) stato creato|account (created|activated)|welcome|benvenuto|conferma (di )?registrazione|registration confirm|otp|verification code|codice di verifica|password|secure link|login attempt|sign[- ]?in)/i.test(subject)) return "other";
   for (const [kind, re] of RULES) if (re.test(text)) return kind;
   return "other";
 }
@@ -137,11 +141,26 @@ function selftest() {
   const m2 = matchEmail({ from: "no-reply@greenhouse.io", subject: "Your application to Initech", body: "Unfortunately" }, apps);
   const m3 = matchEmail({ from: "jobs@globex.it", subject: "Colloquio", body: "ciao" }, apps);
   const m4 = matchEmail({ from: "news@random.com", subject: "Offers", body: "see our partner initech" }, apps);
-  const checks = [[m1.kind === "strong" && m1.app.company === "Acme", "acme strong"], [m2.kind === "strong" && m2.app.company === "Initech", "greenhouse subject strong"], [m3.kind === "ambiguous", "two globex rows ambiguous"], [m4.kind === "weak", "body-only weak"], [decide("rejection", apps[0]) === "Rejected", "reject maps"], [decide("test", { status: "Interviewing" }) === null, "no downgrade"], [decide("ack", { status: "Found" }) === "Applied", "ack backfills Applied"]];
+  const checks = [[m1.kind === "strong" && m1.app.company === "Acme", "acme strong"], [m2.kind === "strong" && m2.app.company === "Initech", "greenhouse subject strong"], [m3.kind === "ambiguous", "two globex rows ambiguous"], [m4.kind === "weak", "body-only weak"], [classify("Benvenuto, il tuo account è stato creato!", "puoi candidarti, colloquio") === "other", "account mail is noise"], [classify("Your secure link to Claude", "unfortunately") === "other", "login mail is noise"], [decide("rejection", apps[0]) === "Rejected", "reject maps"], [decide("test", { status: "Interviewing" }) === null, "no downgrade"], [decide("ack", { status: "Found" }) === "Applied", "ack backfills Applied"]];
   for (const [pass, name] of checks) if (!pass) { ok = false; console.log("FAIL", name); }
   for (const [u, want] of [["a@icloud.com", "icloud"], ["a@me.com", "icloud"], ["x@gmail.com", "gmail"], ["x@outlook.com", "outlook"], ["x@hotmail.it", "outlook"], ["x@yahoo.it", "yahoo"], ["x@proton.me", "proton"], ["x@mycompany.io", "custom"]])
     if (detectProvider(u) !== want) { ok = false; console.log("FAIL provider", u, detectProvider(u)); }
   console.log(ok ? "selftest OK" : "selftest FAILED"); process.exit(ok ? 0 : 1);
+}
+
+// LinkedIn and some ATS mails keep the actual message only in the HTML part, so read both
+const htmlToText = h => String(h || "").replace(/<(style|script|head)[\s\S]*?<\/(style|script|head)>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "'").replace(/\s+/g, " ").trim();
+const bodyOf = mail => ((mail.text || "").slice(0, 2500) + "\n" + htmlToText(mail.html).slice(0, 3500)).trim();
+
+// readable copy of a mail for the tracker card: real message only, no links, tracking or footers
+const htmlLines = h => String(h || "").replace(/<(style|script|head)[\s\S]*?<\/(style|script|head)>/gi, " ").replace(/<\s*(br|\/p|\/div|\/tr|\/h[1-6]|\/li)\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&middot;/g, "·").replace(/&ndash;|&mdash;/g, "-").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/[͏​-‏­⁠﻿]/g, "").replace(/[ \t]+/g, " ").replace(/ ?\n ?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+const FOOTER = /(this email was intended for|you are receiving linkedin|learn why we included this|unsubscribe|annulla l'iscrizione|view in browser|se non vuoi più ricevere|©|linkedin corporation|top jobs looking for|jobs you may be interested|similar jobs|see more jobs|recommended for you)/i;
+export function cleanBody(mail) {
+  let s = mail.html ? htmlLines(mail.html) : String(mail.text || "");
+  if (!mail.html || s.length < 40) s = String(mail.text || "");
+  s = s.replace(/https?:\/\/\S+/g, "").replace(/\[\s*\]/g, "").replace(/ {2,}/g, " ");
+  const cut = s.search(FOOTER); if (cut > 40) s = s.slice(0, cut);
+  return s.split("\n").map(l => l.trim()).filter((l, i, a) => l || (a[i - 1] && a[i - 1] !== "")).join("\n").trim().slice(0, 1400);
 }
 
 // ---------- main ----------
@@ -149,6 +168,7 @@ async function main() {
   const argv = process.argv.slice(2);
   if (argv.includes("--selftest")) return selftest();
   const apply = argv.includes("--apply");
+  const skip = (argv.includes("--skip") ? argv[argv.indexOf("--skip") + 1] : "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
   const si = argv.indexOf("--since"); const days = si > -1 ? +argv[si + 1] : 3;
   if (argv.includes("--init")) {
     const target = path.join(here, "mail-config.json");
@@ -194,15 +214,21 @@ async function main() {
     const lock = await client.getMailboxLock(box, { readOnly: true });
     try {
       const uids = await client.search({ since }, { uid: true });
-      for (const uid of uids || []) {
-        const msg = await client.fetchOne(uid, { source: true, envelope: true }, { uid: true });
+      if (!(uids || []).length) continue;
+      process.stdout.write(`${box}: reading ${uids.length} messages...
+`);
+      // one streamed request for the whole range (a request per message is far too slow on big mailboxes)
+      for await (const msg of client.fetch(uids, { source: true, uid: true }, { uid: true })) {
+        const uid = msg.uid;
+        if (!msg.source || msg.source.length > 3e6) continue; // skip huge attachments-only mails
         const mail = await simpleParser(msg.source);
         const id = mail.messageId || `${box}:${uid}`;
         if (seen.has(id)) continue; seen.add(id); report.scanned++;
         const fromAddr = mail.from?.value?.[0]?.address?.toLowerCase() || "";
         if (fromAddr === me) continue;
-        const m = { from: `${mail.from?.text || ""}`, subject: mail.subject || "", body: (mail.text || "").slice(0, 5000), date: (mail.date || new Date()).toISOString().slice(0, 10) };
+        const m = { from: `${mail.from?.text || ""}`, subject: mail.subject || "", body: bodyOf(mail), clean: cleanBody(mail), date: (mail.date || new Date()).toISOString().slice(0, 10) };
         const match = matchEmail(m, apps);
+        if (match.app && skip.some(s => (match.app.company || "").toLowerCase().includes(s))) { report.ignored++; continue; } // --skip company1,company2 for rows that are platforms or wrong matches
         if (match.kind === "none") { report.ignored++; continue; }
         const kind = classify(m.subject, m.body);
         if (kind === "other" && match.kind !== "strong") { report.ignored++; continue; }
@@ -213,7 +239,7 @@ async function main() {
           report.strong.push(item);
           // keep the email itself on the application card, so the reply can be read in the tracker (acknowledgements are skipped as noise)
           if (apply && kind !== "ack") {
-            await fetch(`${TRACKER}/api/apps/${match.app.id}/messages`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [{ id, platform: "email", dir: "in", text: ((m.subject ? m.subject + "\n\n" : "") + m.body).slice(0, 1400), ts: (mail.date || new Date()).toISOString() }] }) }).catch(() => {});
+            await fetch(`${TRACKER}/api/apps/${match.app.id}/messages`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [{ id, platform: "email", dir: "in", text: ((m.subject ? m.subject + "\n\n" : "") + m.clean.split("\n").filter(l => l.trim() !== (m.subject || "").trim()).join("\n").replace(/\n{3,}/g, "\n\n").trim()).slice(0, 1600), ts: (mail.date || new Date()).toISOString() }] }) }).catch(() => {});
           }
           if (apply && next) {
             const note = `${match.app.notes ? match.app.notes + " | " : ""}Email ${m.date} (${kind}): ${m.subject.slice(0, 80)}`;
@@ -225,7 +251,7 @@ async function main() {
     } finally { lock.release(); }
   }
   await client.logout();
-  if (apply || days <= 3) fs.writeFileSync(statePath, JSON.stringify({ seen: [...seen].slice(-5000) }));
+  if (apply) fs.writeFileSync(statePath, JSON.stringify({ seen: [...seen].slice(-5000) }));
   fs.writeFileSync(path.join(here, "mail-report.json"), JSON.stringify(report, null, 1));
   console.log(`scanned ${report.scanned} new emails (${days}d): ${report.strong.length} matched to applications, ${report.review.length} need review, ${report.ignored} unrelated`);
   report.strong.forEach(i => console.log(`  ${i.kind.padEnd(9)} ${i.company} - ${i.role} :: ${i.change} :: ${i.subject.slice(0, 60)}`));

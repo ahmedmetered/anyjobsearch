@@ -34,7 +34,7 @@ const jobs = await page.evaluate(() => {
     seen.add(key);
     const l = card.querySelector('[data-testid="text-location"]')?.textContent?.trim() || "";
     const s = card.querySelector(".salary-snippet-container, [data-testid='salary-snippet']")?.textContent?.trim() || "";
-    out.push({ title: t, company: c, location: l, salary: s, url: jk ? `https://it.indeed.com/viewjob?jk=${jk}` : "" });
+    out.push({ title: t, company: c, location: l, salary: s, url: jk ? `https://it.indeed.com/viewjob?jk=${jk}` : "", easy: /candidati facilmente|easily apply/i.test(card.innerText) });
   });
   return out;
 });
