@@ -209,6 +209,28 @@
   .msg.in { align-self:flex-start; background:var(--track); color:var(--ink); }
   .msg.out { align-self:flex-end; background:var(--accent-soft); color:var(--ink); }
   .msg .who { display:block; font-size:11px; color:var(--ink-3); margin-bottom:2px; }
+
+  /* dropdowns: custom arrow, page-styled menu (native popups cannot be rounded) */
+  select.filter, select.ctl { -webkit-appearance:none; appearance:none; cursor:pointer; padding-right:32px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236E6E73' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 13px center; background-size:10px 6px; }
+  select.ctl { padding-right:28px; background-position:right 10px center; }
+  [data-theme="dark"] select.filter, [data-theme="dark"] select.ctl {
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A1A1A6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+  .dd { position:fixed; z-index:60; overflow:auto; background:var(--surface); border:1px solid var(--hairline); border-radius:16px; box-shadow:0 14px 40px rgba(0,0,0,.18); padding:6px; }
+  .dd div { padding:7px 12px; border-radius:10px; font-size:13.5px; color:var(--ink); cursor:pointer; white-space:nowrap; }
+  .dd div { transition:background .08s ease; }
+  .dd div.cur { font-weight:600; color:var(--accent); }
+  .dd div.dim { color:var(--ink-3); }
+  .dd div.hl { background:var(--accent); color:#fff; }
+  /* dialogs */
+  .modal-back { position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.4); }
+  .modal { width:min(420px,100%); background:var(--surface); border-radius:var(--radius-card); padding:22px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .modal h3 { font-size:17px; font-weight:600; margin-bottom:6px; }
+  .modal p { font-size:14px; color:var(--ink-2); margin-bottom:14px; }
+  .modal input { width:100%; font:inherit; font-size:14px; color:var(--ink); background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-fld); padding:9px 12px; margin-bottom:16px; }
+  .modal .row { display:flex; justify-content:flex-end; gap:8px; }
+  .modal button.danger-fill { background:var(--danger); border-color:var(--danger); color:#fff; font-weight:600; }
 </style>
 </head>
 <body>
@@ -362,6 +384,80 @@
 </div>
 
 <script>
+// page-styled dropdown menus and dialogs (native popups and browser dialogs cannot match the style)
+let ddEl = null, ddSel = null, ddHl = -1;
+function ddClose(){ if (ddEl) ddEl.remove(); ddEl = null; ddSel = null; }
+function ddMark(i, still){
+  if (!ddEl) return; const items = [...ddEl.children]; if (!items.length) return;
+  ddHl = (i + items.length) % items.length;
+  items.forEach((d, k) => d.classList.toggle("hl", k === ddHl));
+  if (!still) items[ddHl].scrollIntoView({block:"nearest"});
+}
+function ddOpen(s){
+  ddClose(); ddSel = s;
+  const m = ddEl = document.createElement("div"); m.className = "dd"; m.setAttribute("role", "listbox");
+  [...s.options].forEach((o, i) => {
+    const d = document.createElement("div"); d.setAttribute("role", "option"); d.dataset.i = i;
+    d.textContent = o.text || "None"; if (!o.text) d.classList.add("dim"); if (i === s.selectedIndex) d.classList.add("cur");
+    m.appendChild(d);
+  });
+  document.body.appendChild(m);
+  const r = s.getBoundingClientRect(), below = innerHeight - r.bottom - 12, above = r.top - 12;
+  const up = m.scrollHeight > below && above > below, room = Math.max(140, up ? above : below);
+  m.style.maxHeight = room + "px"; m.style.minWidth = r.width + "px";
+  m.style.left = Math.max(8, Math.min(r.left, innerWidth - m.offsetWidth - 8)) + "px";
+  m.style.top = (up ? r.top - m.offsetHeight - 6 : r.bottom + 6) + "px";
+  ddMark(s.selectedIndex);
+}
+function ddChoose(i){
+  const s = ddSel; ddClose(); if (!s || i < 0 || i === s.selectedIndex) return;
+  s.selectedIndex = i; s.dispatchEvent(new Event("change", {bubbles:true}));
+}
+document.addEventListener("mousedown", e => {
+  const s = e.target.closest && e.target.closest("select.filter, select.ctl");
+  if (s && !s.disabled) { e.preventDefault(); s.focus(); if (ddSel === s) ddClose(); else ddOpen(s); return; }
+  const it = e.target.closest && e.target.closest(".dd div");
+  if (it) { e.preventDefault(); ddChoose(+it.dataset.i); return; }
+  if (ddEl && !e.target.closest(".dd")) ddClose();
+});
+document.addEventListener("mouseover", e => { const it = ddEl && e.target.closest && e.target.closest(".dd div"); if (it) ddMark(+it.dataset.i, true); });
+document.addEventListener("keydown", e => {
+  if (!ddEl) { const s = e.target.closest && e.target.closest("select.filter, select.ctl"); if (s && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); ddOpen(s); } return; }
+  if (e.key === "ArrowDown") { e.preventDefault(); ddMark(ddHl + 1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); ddMark(ddHl - 1); }
+  else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ddChoose(ddHl); }
+  else if (e.key === "Escape" || e.key === "Tab") { ddClose(); }
+}, true);
+addEventListener("resize", ddClose);
+addEventListener("scroll", e => { if (ddEl && !(e.target.closest && e.target.closest(".dd"))) ddClose(); }, true);
+
+// ask({title, text, input, value, placeholder, ok, danger}) -> true/false for a confirmation, the typed text (or null) when `input` is set
+function ask(o){
+  return new Promise(done => {
+    const back = document.createElement("div"); back.className = "modal-back";
+    const box = document.createElement("div"); box.className = "modal"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+    const h = document.createElement("h3"); h.textContent = o.title || ""; box.appendChild(h);
+    if (o.text) { const p = document.createElement("p"); p.textContent = o.text; box.appendChild(p); }
+    let inp = null;
+    if (o.input) { inp = document.createElement("input"); inp.type = "text"; inp.value = o.value || ""; inp.placeholder = o.placeholder || ""; inp.setAttribute("aria-label", o.title || ""); box.appendChild(inp); }
+    const row = document.createElement("div"); row.className = "row";
+    const no = document.createElement("button"); no.textContent = "Cancel";
+    const yes = document.createElement("button"); yes.textContent = o.ok || "OK"; yes.className = o.danger ? "danger-fill" : "primary";
+    row.append(no, yes); box.appendChild(row); back.appendChild(box); document.body.appendChild(back);
+    const prev = document.activeElement;
+    const end = v => { back.remove(); document.removeEventListener("keydown", key, true); if (prev && prev.focus) try { prev.focus(); } catch (e) {} done(v); };
+    const key = e => {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); end(o.input ? null : false); }
+      else if (e.key === "Enter" && e.target.tagName !== "BUTTON") { e.preventDefault(); e.stopPropagation(); yes.click(); }
+    };
+    document.addEventListener("keydown", key, true);
+    no.onclick = () => end(o.input ? null : false);
+    yes.onclick = () => end(o.input ? inp.value : true);
+    back.addEventListener("mousedown", e => { if (e.target === back) end(o.input ? null : false); });
+    (inp || yes).focus(); if (inp) inp.select();
+  });
+}
+
 const API = "/api/apps";
 const STAGES = ["Found","Ready to send","Applied","Replied","Interviewing","Offer","Rejected","Withdrawn"];
 let apps = [];
@@ -616,7 +712,7 @@ function selectShown(){ lastShown.forEach(id => sel.add(id)); render(); }
 function clearSel(){ sel.clear(); render(); }
 async function bulkApply(){
   const st = $("bulkst").value; if (!st || !sel.size) return;
-  if (!confirm("Mark " + sel.size + " selected entries as " + st + "?")) return;
+  if (!(await ask({title:"Mark " + sel.size + " selected as " + st + "?", text:"You can undo for a few seconds afterwards.", ok:"Mark them"}))) return;
   const prev = apps.filter(a => sel.has(a.id)).map(a => ({id: a.id, status: a.status, date: a.date || ""}));
   await Promise.all(prev.map(p => fetch(API + "/" + p.id, {method:"PATCH", headers:{"content-type":"application/json"}, body: JSON.stringify({status: st})})));
   sel.clear(); $("bulkst").value = ""; await refresh();
@@ -648,8 +744,8 @@ function fillViews(selected){
   const v = loadViews();
   $("f_view").innerHTML = '<option value="">Saved views</option>' + Object.keys(v).sort().map(n => "<option" + (n === selected ? " selected" : "") + ">" + esc(n) + "</option>").join("");
 }
-function saveView(){
-  const name = (prompt("Name this view (for example: Product, remote, this week)") || "").trim(); if (!name) return;
+async function saveView(){
+  const name = ((await ask({title:"Save this view", text:"Saves the current filters and sort under a name you can pick later.", input:true, placeholder:"For example: Product, remote, this week", ok:"Save"})) || "").trim(); if (!name) return;
   const snap = {ids: Object.fromEntries(VIEW_IDS.map(i => [i, $(i).value])), top: topOnly, easy: easyOnly, sal: salOnly, stale: staleHide, dup: dupOnly, status: statusSel};
   const v = loadViews(); v[name] = snap; storeViews(v); fillViews(name); toast("Saved view: " + name);
 }
@@ -729,7 +825,7 @@ async function doImport(){
 }
 async function del(id){
   const rec = apps.find(a => a.id === id); if (!rec) return;
-  if (!confirm("Delete this application?")) return;
+  if (!(await ask({title:"Delete this application?", text:rec.company + ". You can undo for a few seconds afterwards.", ok:"Delete", danger:true}))) return;
   await fetch(`${API}/${id}`, {method:"DELETE"});
   await refresh();
   toast("Deleted " + rec.company, async () => {
