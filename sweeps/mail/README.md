@@ -54,3 +54,7 @@ Patterns cover English and Italian; add your language to the `RULES` table in `m
 Check the classifier any time with `node mail-check.mjs --selftest`.
 
 Wire it into the daily routine by running `node mail-check.mjs --apply` at the start of the morning sweep.
+
+Recruiter and employer emails (except plain "we received your application" acknowledgements) are also
+kept on the application's card as a conversation, with a "new" badge, a "Replies waiting" filter and an
+optional desktop notification in the tracker.

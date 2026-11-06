@@ -8,6 +8,7 @@
 //   POST   /api/apps              add one  {company, role, source?, url?, salary?, cv?, status?, notes?}
 //   POST   /api/apps/bulk         import many  {apps:[...]} - dedupes on company+role
 //   PATCH  /api/apps/<id>         update any fields (status, notes, next, ...)
+//   POST   /api/apps/<id>/messages  add conversation messages {messages:[{id,platform,dir,text,ts}]}
 //   DELETE /api/apps/<id>         remove
 import http from "node:http";
 import fs from "node:fs";
@@ -67,6 +68,21 @@ const serialized = fn => {
 };
 
 const pickUrl = u => (/^https?:\/\//i.test(u || "") ? u.trim() : ""); // AUD-5: no javascript: or data: schemes
+// ---- conversation threads: email replies are added by mail-tools/mail-check.mjs ----
+const cleanMsg = m => ({ id: cap(String((m && m.id) || ""), 120), platform: cap(m && m.platform, 20), dir: m && m.dir === "out" ? "out" : "in", text: cap(m && m.text, 1500), ts: cap(m && m.ts, 30) });
+const cleanMessages = list => (Array.isArray(list) ? list : []).map(cleanMsg).filter(m => m.id && m.ts).slice(-40);
+const intOf = (v, max) => Math.max(0, Math.min(max, Number.isFinite(+v) ? Math.trunc(+v) : 0));
+// adds new messages to a record: dedupes by id, keeps the newest 40, counts new inbound ones as unread
+const mergeMessages = (record, incoming, silent = false) => {
+  const have = new Set((record.messages || []).map(m => m.id));
+  const fresh = cleanMessages(incoming).filter(m => !have.has(m.id));
+  if (!fresh.length) return { record, added: 0 };
+  const messages = [...(record.messages || []), ...fresh].sort((a, b) => a.ts.localeCompare(b.ts)).slice(-40);
+  const lastIn = messages.filter(m => m.dir === "in").pop(), lastOut = messages.filter(m => m.dir === "out").pop();
+  const unread = (record.unread || 0) + (silent ? 0 : fresh.filter(m => m.dir === "in").length);
+  return { record: { ...record, messages, unread, last_in: lastIn ? lastIn.ts : "", last_out: lastOut ? lastOut.ts : "", updated: today() }, added: fresh.length };
+};
+
 const oneOf = (v, list) => (list.includes(v) ? v : "");
 const cap = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
 const normalize = a => ({
@@ -86,6 +102,7 @@ const normalize = a => ({
   date: cap(a.date, 10),
   next: cap(a.next, 200),
   notes: cap(a.notes, 4000),
+  messages: cleanMessages(a.messages), unread: intOf(a.unread, 999), last_in: cap(a.last_in, 30), last_out: cap(a.last_out, 30),
   added: cap(a.added, 10) || today(),
   updated: a.updated || today()
 });
@@ -108,6 +125,8 @@ const applyPatch = (record, patch) => {
   if ("next" in patch) next.next = cap(patch.next, 200);
   if ("notes" in patch) next.notes = cap(patch.notes, 4000);
   if ("added" in patch) next.added = cap(patch.added, 10);
+  if ("unread" in patch) next.unread = intOf(patch.unread, 999);
+  if ("messages" in patch) next.messages = cleanMessages(patch.messages);
   // marking something Applied stamps the application date once
   if (next.status === "Applied" && !next.date) next.date = today();
   next.updated = today();
@@ -164,6 +183,19 @@ const server = http.createServer(async (req, res) => {
         }
         writeData(d);
         send(200, { added: added.length, apps: added });
+      });
+    }
+
+    const mm = url.pathname.match(/^\/api\/apps\/([\w-]+)\/messages$/);
+    if (mm && req.method === "POST") {
+      const body = await readBody(req);
+      return serialized(() => {
+        const d = readData();
+        const i = d.findIndex(a => a.id === mm[1]);
+        if (i < 0) return send(404, { error: "not found" });
+        const out = mergeMessages(d[i], body.messages, !!body.silent);
+        d[i] = out.record; writeData(d);
+        send(200, { added: out.added, app: d[i] });
       });
     }
 

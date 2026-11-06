@@ -197,6 +197,18 @@
   .toast.on { display:flex; }
   .toast button { background:transparent; border:0; color:var(--bg); font-weight:600; text-decoration:underline; cursor:pointer; padding:2px 4px; }
   .tag.dup { background:var(--star-tint); color:var(--star); }
+  .tag.new { background:var(--accent); color:#fff; }
+  .tag.wait { background:var(--good-tint); color:var(--good); }
+  details.thread { margin-top:11px; border:1px solid var(--hairline-soft); border-radius:var(--radius-fld); padding:0 12px; }
+  details.thread summary { cursor:pointer; padding:9px 0; font-size:13px; font-weight:600; list-style:none; }
+  details.thread summary::-webkit-details-marker { display:none; }
+  details.thread summary::after { content:"  +"; color:var(--ink-3); font-weight:400; }
+  details.thread[open] summary::after { content:"  -"; }
+  .msgs { display:flex; flex-direction:column; gap:7px; padding:2px 0 12px; max-height:320px; overflow:auto; }
+  .msg { max-width:86%; padding:7px 11px; border-radius:12px; font-size:13.5px; line-height:1.4; white-space:pre-wrap; word-break:break-word; }
+  .msg.in { align-self:flex-start; background:var(--track); color:var(--ink); }
+  .msg.out { align-self:flex-end; background:var(--accent-soft); color:var(--ink); }
+  .msg .who { display:block; font-size:11px; color:var(--ink-3); margin-bottom:2px; }
 </style>
 </head>
 <body>
@@ -280,6 +292,9 @@
     <button onclick="deleteView()">Delete view</button>
     <button id="f_stale" onclick="toggleStale()" aria-pressed="false">Hide stale</button>
     <button id="f_dup" onclick="toggleDup()" aria-pressed="false">Possible duplicates</button>
+    <button id="f_replies" onclick="toggleReplies()" aria-pressed="false">Replies waiting</button>
+    <span class="spacer"></span>
+    <button id="f_alerts" onclick="toggleAlerts()" aria-pressed="false">Alerts off</button>
   </div>
 
   <div class="bulk" id="bulk">
@@ -356,6 +371,11 @@ let topOnly = false;
 let easyOnly = false;
 let salOnly = false;
 let staleHide = false, dupOnly = false;
+let repliesOnly = false, alertsOn = false;
+const CLOSED_STAGES = ["Offer", "Rejected", "Withdrawn"];
+const needsReply = a => !CLOSED_STAGES.includes(a.status) && !!a.last_in && (!a.last_out || a.last_in > a.last_out);
+const totalUnread = list => list.reduce((s, a) => s + (a.unread || 0), 0);
+const fmtTs = ts => { const d = new Date(ts); return isNaN(d) ? "" : d.toLocaleString([], {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}); };
 let dupCount = {};
 let toastTimer = 0, undoFn = null;
 const normCoDup = c => (c||"").toLowerCase().replace(/\([^)]*\)/g, " ").replace(/\b(s\.?p\.?a\.?|s\.?r\.?l\.?s?\.?|gmbh|inc\.?|ltd\.?|llc|group|italia|italy|holding|the)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
@@ -423,7 +443,7 @@ function render(){
     (!fm || a.mode === fm) && (!ft || a.type === ft) &&
     (!fl || (a.location||"") === fl) && (!fsrc || srcCat(a) === fsrc) &&
     (!topOnly || a.top) && (!easyOnly || a.easy) &&
-    (!salOnly || (a.salary||"").trim()) && (!ftr || trackOf(a) === ftr) && (!freg || regionOf(a) === freg) && addedOk(a) && (!staleHide || !isStale(a)) && (!dupOnly || dupCount[dupKey(a)] > 1) &&
+    (!salOnly || (a.salary||"").trim()) && (!ftr || trackOf(a) === ftr) && (!freg || regionOf(a) === freg) && addedOk(a) && (!staleHide || !isStale(a)) && (!dupOnly || dupCount[dupKey(a)] > 1) && (!repliesOnly || (a.unread || 0) > 0 || needsReply(a)) &&
     (!toks.length || toks.every(t => hay(a).includes(t))));
 
   // summary chips
@@ -434,7 +454,10 @@ function render(){
   $("stats").innerHTML =
     `<span class="chip hot">Applications: <b>${nApps}</b></span>` +
     `<span class="chip">Leads (Found): <b>${nLeads}</b></span>` +
-    `<span class="chip">All entries: <b>${apps.length}</b></span>`;
+    `<span class="chip">All entries: <b>${apps.length}</b></span>` +
+    (apps.some(a => (a.unread || 0) > 0) ? `<span class="chip hot" style="background:var(--accent);border-color:var(--accent)">New replies: <b>${apps.filter(a => (a.unread || 0) > 0).length}</b></span>` : "");
+  $("f_replies").textContent = "Replies waiting (" + apps.filter(a => (a.unread || 0) > 0 || needsReply(a)).length + ")";
+  document.title = (totalUnread(apps) ? "(" + totalUnread(apps) + ") " : "") + "anyjobsearch";
 
   $("f_stale").textContent = "Hide stale (" + apps.filter(isStale).length + ")";
   $("f_dup").textContent = "Possible duplicates (" + apps.filter(a => dupCount[dupKey(a)] > 1).length + ")";
@@ -494,7 +517,7 @@ function render(){
     <div class="row1">
       <div>
         <input type="checkbox" class="sel" ${sel.has(a.id)?"checked":""} onchange="toggleSel('${a.id}', this.checked)" aria-label="Select ${esc(a.company)}"><span class="co">${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.company)}</a>` : esc(a.company)}</span> · <span class="role">${esc(a.role)}</span>
-        <div class="meta">${esc(a.source||"")}${a.salary?`<span class="dot">${esc(a.salary)}</span>`:""}${tags}</div>
+        <div class="meta">${esc(a.source||"")}${a.salary?`<span class="dot">${esc(a.salary)}</span>`:""}${tags}${(a.unread||0) > 0 ? `<span class="tag new">${a.unread} new</span>` : ""}${needsReply(a) ? `<span class="tag wait">Waiting for your reply</span>` : ""}</div>
       </div>
       <div class="rowbtns">
         <button class="icon" aria-pressed="${!!a.top}" title="Top pick" aria-label="Top pick" onclick="patch('${a.id}', {top: ${!a.top}})">★</button>
@@ -533,6 +556,7 @@ function render(){
       <div><label for="lc-${a.id}">Location</label><input class="ctl" id="lc-${a.id}" value="${esc(a.location||"")}" placeholder="e.g. Milan" onchange="patch('${a.id}', {location: this.value})"></div>
       <div><label for="nx-${a.id}">Next action</label><input class="ctl" id="nx-${a.id}" value="${esc(a.next||"")}" placeholder="e.g. send test answer" onchange="patch('${a.id}', {next: this.value})"></div>
     </div>
+    ${threadHtml(a)}
     <div class="full"><label for="nt-${a.id}">Notes</label><textarea class="ctl" id="nt-${a.id}" onchange="patch('${a.id}', {notes: this.value})">${esc(a.notes||"")}</textarea></div>
     <div class="foot"><span class="updated">updated ${esc(a.updated||"—")}</span></div>
   </article>`;
@@ -542,6 +566,46 @@ function render(){
   if (scrollYBefore) requestAnimationFrame(() => window.scrollTo(0, scrollYBefore));
 }
 
+function threadHtml(a){
+  const m = a.messages || []; if (!m.length) return "";
+  return `<details class="thread"><summary onclick="markRead('${a.id}')">Messages (${m.length})${(a.unread||0) ? " · " + a.unread + " new" : ""}</summary><div class="msgs">` +
+    m.map(x => `<div class="msg ${x.dir === "out" ? "out" : "in"}"><span class="who">${x.dir === "out" ? "You" : esc(a.company)} · ${esc(x.platform||"")} · ${esc(fmtTs(x.ts))}</span>${esc(x.text)}</div>`).join("") +
+    `</div></details>`;
+}
+function toggleReplies(){ repliesOnly = !repliesOnly; syncToggles(); render(); }
+async function markRead(id){
+  const a = apps.find(x => x.id === id); if (!a || !(a.unread > 0)) return;
+  a.unread = 0;
+  await fetch(`${API}/${id}`, {method:"PATCH", headers:{"content-type":"application/json"}, body: JSON.stringify({unread: 0})});
+  const el = [...document.querySelectorAll("details.thread")].find(d => d.closest(".card") && d.closest(".card").innerHTML.includes("markRead('" + id + "')"));
+  if (el){ const card = el.closest(".card"); card.querySelectorAll(".tag.new").forEach(t => t.remove()); const s = el.querySelector("summary"); if (s) s.textContent = s.textContent.replace(/ · \d+ new/, ""); }
+  document.title = (totalUnread(apps) ? "(" + totalUnread(apps) + ") " : "") + "anyjobsearch";
+}
+function setAlertsButton(){ const b = $("f_alerts"); b.textContent = alertsOn ? "Alerts on" : "Alerts off"; b.classList.toggle("on", alertsOn); b.setAttribute("aria-pressed", String(alertsOn)); }
+async function toggleAlerts(){
+  if (alertsOn){ alertsOn = false; try { localStorage.setItem("ajs-alerts", "0"); } catch (e) {} setAlertsButton(); return; }
+  if (!("Notification" in window)){ toast("This browser does not support desktop notifications."); return; }
+  const perm = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+  alertsOn = perm === "granted"; try { localStorage.setItem("ajs-alerts", alertsOn ? "1" : "0"); } catch (e) {}
+  setAlertsButton(); toast(alertsOn ? "Alerts on: you will get a notification when an employer replies." : "Notifications are blocked in the browser settings.");
+}
+// a quiet poll every minute; a desktop notification when new replies arrive
+async function poll(){
+  try {
+    const next = await (await fetch(API)).json(); const before = totalUnread(apps), after = totalUnread(next);
+    const sig = l => JSON.stringify(l.map(a => [a.id, a.unread, a.updated, a.status, a.last_in, a.last_out]));
+    const changed = sig(next) !== sig(apps);
+    const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#list");
+    apps = next;
+    if (changed && !typing) render(); else document.title = (after ? "(" + after + ") " : "") + "anyjobsearch";
+    if (after > before){
+      toast((after - before) + " new repl" + (after - before === 1 ? "y" : "ies"));
+      if (alertsOn && "Notification" in window && Notification.permission === "granted") new Notification("anyjobsearch", {body: (after - before) + " new repl" + (after - before === 1 ? "y" : "ies") + " from employers"});
+    }
+  } catch (e) {}
+}
+try { alertsOn = localStorage.getItem("ajs-alerts") === "1" && "Notification" in window && Notification.permission === "granted"; } catch (e) {}
+setInterval(poll, 60000);
 function toggleSal(){
   salOnly = !salOnly; const b = $("f_sal");
   b.classList.toggle("on", salOnly); b.setAttribute("aria-pressed", String(salOnly)); render();
@@ -573,7 +637,7 @@ async function doUndo(){
 function toggleStale(){ staleHide = !staleHide; syncToggles(); render(); }
 function toggleDup(){ dupOnly = !dupOnly; syncToggles(); render(); }
 function syncToggles(){
-  [["f_top", topOnly], ["f_easy", easyOnly], ["f_sal", salOnly], ["f_stale", staleHide], ["f_dup", dupOnly]].forEach(([id, on]) => {
+  [["f_top", topOnly], ["f_easy", easyOnly], ["f_sal", salOnly], ["f_stale", staleHide], ["f_dup", dupOnly], ["f_replies", repliesOnly]].forEach(([id, on]) => {
     const b = $(id); b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
   $("f_top").textContent = topOnly ? "★ Top picks" : "☆ Top picks";
 }
@@ -701,6 +765,7 @@ if (document.addEventListener) document.addEventListener("keydown", e => {
   if (q0) $("f_q").value = q0;
 })();
 fillViews("");
+setAlertsButton();
 refresh();
 </script>
 </body>

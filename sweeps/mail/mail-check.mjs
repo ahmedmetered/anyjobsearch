@@ -211,6 +211,10 @@ async function main() {
           const next = decide(kind, match.app);
           item.change = next ? `${match.app.status} -> ${next}` : "no change";
           report.strong.push(item);
+          // keep the email itself on the application card, so the reply can be read in the tracker (acknowledgements are skipped as noise)
+          if (apply && kind !== "ack") {
+            await fetch(`${TRACKER}/api/apps/${match.app.id}/messages`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [{ id, platform: "email", dir: "in", text: ((m.subject ? m.subject + "\n\n" : "") + m.body).slice(0, 1400), ts: (mail.date || new Date()).toISOString() }] }) }).catch(() => {});
+          }
           if (apply && next) {
             const note = `${match.app.notes ? match.app.notes + " | " : ""}Email ${m.date} (${kind}): ${m.subject.slice(0, 80)}`;
             const r = await fetch(`${TRACKER}/api/apps/${match.app.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: next, notes: note, updated: m.date }) });
